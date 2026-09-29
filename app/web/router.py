@@ -1,6 +1,6 @@
 import uuid
 from fastapi import APIRouter, Depends, Request, HTTPException, status
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -15,15 +15,25 @@ templates = Jinja2Templates(directory="app/templates")
 
 web_router = APIRouter()
 
+@web_router.get("/", response_class=RedirectResponse)
+def root_redirect():
+    """Redirect root access to login page."""
+    return RedirectResponse(url="/login")
+
+@web_router.get("/login", response_class=HTMLResponse)
+def render_login_page(request: Request):
+    """Render modern forensic workstation login view."""
+    return templates.TemplateResponse(request=request, name="login.html")
+
+@web_router.get("/app", response_class=HTMLResponse)
+def render_app_workspace(request: Request):
+    """Render unified forensic application workspace shell."""
+    return templates.TemplateResponse(request=request, name="app.html")
+
 @web_router.get("/investigation/{case_id}", response_class=HTMLResponse)
 def render_case_investigation_view(request: Request, case_id: uuid.UUID, db: Session = Depends(get_db)):
     """
-    Renders the web dashboard view for a case investigation:
-    - Case details & metrics
-    - Evidence ledger table
-    - Canonical entities breakdown
-    - Discovered matches & cross-evidence relationships
-    - Audit provenance log table
+    Legacy case investigation view mapping.
     """
     case = db.query(Case).filter(Case.id == case_id).first()
     if not case:
@@ -77,13 +87,10 @@ def render_case_investigation_view(request: Request, case_id: uuid.UUID, db: Ses
         }
     )
 
-@web_router.get("/dashboard", response_class=HTMLResponse)
-def render_dashboard_overview(request: Request, db: Session = Depends(get_db)):
+@web_router.get("/dashboard", response_class=RedirectResponse)
+def render_dashboard_overview():
     """
-    Renders main dashboard overview by redirecting to the latest active case view.
+    Redirect legacy /dashboard to unified /app.
     """
-    latest_case = db.query(Case).order_by(Case.created_at.desc()).first()
-    if latest_case:
-        return render_case_investigation_view(request=request, case_id=latest_case.id, db=db)
-    
-    raise HTTPException(status_code=404, detail="No active forensic cases found in database.")
+    return RedirectResponse(url="/app")
+

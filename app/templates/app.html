@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SECE — Digital Forensics Unified Workstation</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+  <script src="/static/js/auth.js"></script>
+</head>
+<body>
+
+  <div class="app-shell">
+    
+    <!-- FIXED SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="logo">🔍</span>
+        <h2>SECE FORENSICS</h2>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a id="nav-overview" class="nav-item active" onclick="switchTab('overview')">
+          <span>📊</span> Overview / Dashboard
+        </a>
+        <a id="nav-cases" class="nav-item" onclick="switchTab('cases')">
+          <span>📁</span> Case Management
+        </a>
+        <a id="nav-evidence" class="nav-item" onclick="switchTab('evidence')">
+          <span>📦</span> Evidence Ledger
+        </a>
+        <a id="nav-entities" class="nav-item" onclick="switchTab('entities')">
+          <span>🏷️</span> Extracted Entities
+        </a>
+        <a id="nav-correlation" class="nav-item" onclick="switchTab('correlation')">
+          <span>🕸️</span> Correlation Engine
+        </a>
+        <a id="nav-audit" class="nav-item" onclick="switchTab('audit')">
+          <span>📜</span> Chain of Custody
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <p>SECE Platform v1.0.0</p>
+        <p>Forensic Hash & Chain Verified</p>
+      </div>
+    </aside>
+
+    <!-- MAIN WORKSPACE WRAPPER -->
+    <div class="main-wrapper">
+      
+      <!-- TOP HEADER BAR -->
+      <header class="top-header">
+        <div class="case-selector-wrap">
+          <label for="active-case-select">Active Case:</label>
+          <select id="active-case-select" class="case-select" onchange="handleCaseSelectChange(this.value)">
+            <option value="">Loading Cases...</option>
+          </select>
+          <button class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" onclick="openCreateCaseModal()">+ New Case</button>
+        </div>
+
+        <div class="user-profile">
+          <div class="user-badge">
+            <span>🛡️</span>
+            <span id="user-display-name">Investigator</span>
+            <span id="user-role-tag" class="user-role-badge">INVESTIGATOR</span>
+          </div>
+          <button class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" onclick="logout()">Logout</button>
+        </div>
+      </header>
+
+      <!-- CONTENT WORKSPACE -->
+      <main class="content-workspace">
+        
+        <!-- PANE 1: OVERVIEW -->
+        <section id="pane-overview" class="tab-pane active">
+          <div class="metrics-grid">
+            <div class="card">
+              <div class="metric-lbl">Total Case Evidence Files</div>
+              <div id="stat-evidence-count" class="metric-num">0</div>
+            </div>
+            <div class="card">
+              <div class="metric-lbl">Canonical Entity Profiles</div>
+              <div id="stat-entities-count" class="metric-num">0</div>
+            </div>
+            <div class="card">
+              <div class="metric-lbl">Discovered Relationships</div>
+              <div id="stat-relationships-count" class="metric-num">0</div>
+            </div>
+            <div class="card">
+              <div class="metric-lbl">Pending Candidate Matches</div>
+              <div id="stat-matches-count" class="metric-num">0</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title"><span>📋</span> Active Case Overview</h3>
+              <span id="overview-case-status" class="badge badge-open">OPEN</span>
+            </div>
+            <p id="overview-case-title" style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem;">Select an Active Case</p>
+            <p id="overview-case-desc" style="color: var(--text-muted); font-size: 0.9rem;">No case selected.</p>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title"><span>📜</span> Recent Audit Activity (Chain of Custody)</h3>
+            </div>
+            <table id="overview-audit-table">
+              <thead>
+                <tr>
+                  <th>Action</th>
+                  <th>Actor</th>
+                  <th>Details</th>
+                  <th>Timestamp (UTC)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="4" style="color: var(--text-muted);">Loading audit logs...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- PANE 2: CASE MANAGEMENT -->
+        <section id="pane-cases" class="tab-pane">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title"><span>📁</span> Forensic Cases Directory</h3>
+              <button class="btn btn-primary" onclick="openCreateCaseModal()">+ Create New Case</button>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Case Number</th>
+                  <th>Title</th>
+                  <th>Status</th>
+                  <th>Investigator</th>
+                  <th>Created Date</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="cases-table-body">
+                <tr><td colspan="6" style="color: var(--text-muted);">Loading cases...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- PANE 3: EVIDENCE LEDGER -->
+        <section id="pane-evidence" class="tab-pane">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title"><span>📦</span> Ingested Evidence Vault Ledger</h3>
+              <button class="btn btn-primary" onclick="openUploadEvidenceModal()">+ Upload Evidence File</button>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Filename</th>
+                  <th>Category</th>
+                  <th>Size</th>
+                  <th>SHA-256 Hash Digest</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="evidence-table-body">
+                <tr><td colspan="6" style="color: var(--text-muted);">Loading evidence files...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- PANE 4: EXTRACTED ENTITIES -->
+        <section id="pane-entities" class="tab-pane">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title"><span>🏷️</span> Distinct Canonical Entities Directory</h3>
+              <div style="display: flex; gap: 0.5rem;" id="entity-type-filters">
+                <!-- Entity Type Filters generated dynamically -->
+              </div>
+            </div>
+            <div id="canonical-entities-container" class="entity-grid" style="margin-bottom: 2rem;">
+              <p style="color: var(--text-muted);">Loading canonical entities...</p>
+            </div>
+
+            <h3 class="card-title" style="margin-bottom: 1rem;"><span>📍</span> Raw Entity Mentions & Text Context</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Entity Type</th>
+                  <th>Raw Text</th>
+                  <th>Normalized Value</th>
+                  <th>Offset Range</th>
+                  <th>Surrounding Text Context</th>
+                </tr>
+              </thead>
+              <tbody id="mentions-table-body">
+                <tr><td colspan="5" style="color: var(--text-muted);">Select an evidence file or extract entities to view mentions...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- PANE 5: CORRELATION ENGINE -->
+        <section id="pane-correlation" class="tab-pane">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title"><span>🕸️</span> Candidate Entity Matching & Link Discovery</h3>
+              <button class="btn btn-primary" onclick="triggerCorrelationPipeline()">⚡ Run Correlation Engine</button>
+            </div>
+            
+            <h4 style="color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase; margin-bottom: 1rem;">Candidate Entity Matches (Pending Review)</h4>
+            <table>
+              <thead>
+                <tr>
+                  <th>Confidence</th>
+                  <th>Match Rationale</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="matches-table-body">
+                <tr><td colspan="4" style="color: var(--text-muted);">No candidate matches discovered yet. Run correlation engine.</td></tr>
+              </tbody>
+            </table>
+
+            <h4 style="color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase; margin-top: 2rem; margin-bottom: 1rem;">Cross-Evidence Entity Relationships</h4>
+            <table>
+              <thead>
+                <tr>
+                  <th>Relationship Type</th>
+                  <th>Confidence</th>
+                  <th>Connecting Evidence Rationale</th>
+                </tr>
+              </thead>
+              <tbody id="relationships-table-body">
+                <tr><td colspan="3" style="color: var(--text-muted);">No relationships generated yet. Run correlation engine.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- PANE 6: CHAIN OF CUSTODY AUDIT -->
+        <section id="pane-audit" class="tab-pane">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title"><span>📜</span> Immutable Audit Log & Chain of Custody</h3>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Action</th>
+                  <th>Actor / User</th>
+                  <th>Details</th>
+                  <th>Timestamp (UTC)</th>
+                </tr>
+              </thead>
+              <tbody id="audit-full-table-body">
+                <tr><td colspan="4" style="color: var(--text-muted);">Loading complete audit log...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- MODAL: CREATE CASE -->
+  <div id="modal-create-case" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Create New Forensic Case</h3>
+        <button class="close-btn" onclick="closeCreateCaseModal()">&times;</button>
+      </div>
+      <form onsubmit="handleCreateCaseSubmit(event)">
+        <div class="form-group">
+          <label for="new-case-number">Case Number / Index</label>
+          <input type="text" id="new-case-number" required placeholder="e.g. SECE-2026-010">
+        </div>
+        <div class="form-group">
+          <label for="new-case-title">Case Title</label>
+          <input type="text" id="new-case-title" required placeholder="e.g. Financial Fraud Investigation">
+        </div>
+        <div class="form-group">
+          <label for="new-case-desc">Scope & Description</label>
+          <textarea id="new-case-desc" rows="3" placeholder="Summary of investigation scope..."></textarea>
+        </div>
+        <div class="form-group">
+          <label for="new-case-status">Initial Status</label>
+          <select id="new-case-status">
+            <option value="OPEN">OPEN</option>
+            <option value="IN_PROGRESS">IN PROGRESS</option>
+            <option value="CLOSED">CLOSED</option>
+          </select>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+          <button type="button" class="btn btn-secondary" onclick="closeCreateCaseModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Case Container</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: UPLOAD EVIDENCE -->
+  <div id="modal-upload-evidence" class="modal-backdrop" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Upload Evidence File to Vault</h3>
+        <button class="close-btn" onclick="closeUploadEvidenceModal()">&times;</button>
+      </div>
+      <form onsubmit="handleUploadEvidenceSubmit(event)">
+        <div class="form-group">
+          <label for="upload-file">Select Raw Evidence File (.txt, .eml, .csv, .pdf)</label>
+          <input type="file" id="upload-file" required>
+        </div>
+        <div class="form-group">
+          <label for="upload-type">Evidence Category</label>
+          <select id="upload-type" required>
+            <option value="EMAIL">EMAIL Dump</option>
+            <option value="CHAT">CHAT Log</option>
+            <option value="PDF">PDF Document</option>
+            <option value="FINANCIAL_LOG">FINANCIAL Log / Statement</option>
+            <option value="BROWSER_LOG">BROWSER History</option>
+            <option value="CALL_LOG">CALL Log</option>
+            <option value="OTHER">OTHER Digital File</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="upload-desc">Source Description</label>
+          <input type="text" id="upload-desc" placeholder="e.g. Suspect Laptop Hard Drive Dump">
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+          <button type="button" class="btn btn-secondary" onclick="closeUploadEvidenceModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save to Immutable Vault</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/static/js/main.js"></script>
+</body>
+</html>

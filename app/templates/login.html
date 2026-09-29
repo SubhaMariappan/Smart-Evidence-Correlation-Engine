@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SECE — Digital Forensics Portal Login</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+  <script src="/static/js/auth.js"></script>
+</head>
+<body class="login-body">
+
+  <div class="login-container">
+    <div class="login-header">
+      <div class="logo-icon">🔍</div>
+      <h1>SECE FORENSICS</h1>
+      <p>Smart Evidence Correlation Engine Platform</p>
+    </div>
+
+    <!-- Toggle Buttons -->
+    <div class="auth-tabs">
+      <button id="tab-login-btn" class="auth-tab active" onclick="switchAuthTab('login')">Sign In</button>
+      <button id="tab-register-btn" class="auth-tab" onclick="switchAuthTab('register')">Register Account</button>
+    </div>
+
+    <div id="auth-alert" class="alert-box" style="display: none;"></div>
+
+    <!-- Login Form -->
+    <form id="login-form" class="auth-form" onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label for="login-username">Investigator Username</label>
+        <input type="text" id="login-username" required placeholder="e.g. investigator_lead" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label for="login-password">Security Password</label>
+        <input type="password" id="login-password" required placeholder="••••••••••••" autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Authenticate Session</button>
+    </form>
+
+    <!-- Register Form -->
+    <form id="register-form" class="auth-form" style="display: none;" onsubmit="handleRegister(event)">
+      <div class="form-group">
+        <label for="reg-username">Username</label>
+        <input type="text" id="reg-username" required placeholder="e.g. analyst_john">
+      </div>
+      <div class="form-group">
+        <label for="reg-email">Official Email</label>
+        <input type="email" id="reg-email" required placeholder="john@sece.gov">
+      </div>
+      <div class="form-group">
+        <label for="reg-fullname">Full Name</label>
+        <input type="text" id="reg-fullname" required placeholder="John Doe">
+      </div>
+      <div class="form-group">
+        <label for="reg-role">Investigator Role</label>
+        <select id="reg-role">
+          <option value="INVESTIGATOR">Forensic Investigator</option>
+          <option value="ANALYST">Cyber Analyst</option>
+          <option value="CHIEF_INVESTIGATOR">Chief Investigator</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="reg-password">Password</label>
+        <input type="password" id="reg-password" required placeholder="Minimum 8 characters">
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Create Investigator Account</button>
+    </form>
+
+    <div class="login-footer">
+      <p>Protected System — Chain of Custody & Forensic Integrity Monitored</p>
+    </div>
+  </div>
+
+  <script>
+    // Redirect if already authenticated
+    if (getToken()) {
+      window.location.href = '/app';
+    }
+
+    function switchAuthTab(tab) {
+      const alertBox = document.getElementById('auth-alert');
+      alertBox.style.display = 'none';
+
+      if (tab === 'login') {
+        document.getElementById('tab-login-btn').classList.add('active');
+        document.getElementById('tab-register-btn').classList.remove('active');
+        document.getElementById('login-form').style.display = 'block';
+        document.getElementById('register-form').style.display = 'none';
+      } else {
+        document.getElementById('tab-register-btn').classList.add('active');
+        document.getElementById('tab-login-btn').classList.remove('active');
+        document.getElementById('register-form').style.display = 'block';
+        document.getElementById('login-form').style.display = 'none';
+      }
+    }
+
+    function showAlert(msg, isError = true) {
+      const alertBox = document.getElementById('auth-alert');
+      alertBox.innerText = msg;
+      alertBox.className = isError ? 'alert-box alert-error' : 'alert-box alert-success';
+      alertBox.style.display = 'block';
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const username = document.getElementById('login-username').value.trim();
+      const password = document.getElementById('login-password').value;
+
+      try {
+        const response = await fetch('/api/v1/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          showAlert(data.detail || 'Authentication failed. Please check credentials.');
+          return;
+        }
+
+        setToken(data.access_token);
+        
+        // Fetch user profile
+        const meRes = await fetch('/api/v1/auth/me', {
+          headers: { 'Authorization': `Bearer ${data.access_token}` }
+        });
+        if (meRes.ok) {
+          const userObj = await meRes.json();
+          setUser(userObj);
+        }
+
+        showAlert('Authentication successful! Redirecting...', false);
+        setTimeout(() => { window.location.href = '/app'; }, 600);
+      } catch (err) {
+        showAlert('Network error connecting to backend server.');
+      }
+    }
+
+    async function handleRegister(e) {
+      e.preventDefault();
+      const payload = {
+        username: document.getElementById('reg-username').value.trim(),
+        email: document.getElementById('reg-email').value.trim(),
+        full_name: document.getElementById('reg-fullname').value.trim(),
+        role: document.getElementById('reg-role').value,
+        password: document.getElementById('reg-password').value
+      };
+
+      try {
+        const response = await fetch('/api/v1/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          showAlert(data.detail || 'Registration failed.');
+          return;
+        }
+
+        showAlert('Account created! Logging in automatically...', false);
+
+        // Auto login
+        const loginRes = await fetch('/api/v1/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: payload.username, password: payload.password })
+        });
+        const loginData = await loginRes.json();
+        setToken(loginData.access_token);
+        setUser(data);
+
+        setTimeout(() => { window.location.href = '/app'; }, 800);
+      } catch (err) {
+        showAlert('Error registering user account.');
+      }
+    }
+  </script>
+
+</body>
+</html>

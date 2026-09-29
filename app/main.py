@@ -33,16 +33,12 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 # Register Web Dashboard Router
 app.include_router(web_router)
 
-@app.get("/", tags=["System"])
+@app.get("/", include_in_schema=False)
 def root():
-    """Root endpoint returning basic platform information."""
-    return {
-        "system": settings.PROJECT_NAME,
-        "version": settings.VERSION,
-        "status": "online",
-        "documentation": "/docs",
-        "dashboard": "/dashboard"
-    }
+    """Redirect root path to the forensic workstation login page."""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="/login")
+
 
 @app.get("/health", tags=["System"])
 def health_check():

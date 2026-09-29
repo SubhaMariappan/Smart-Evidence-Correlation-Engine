@@ -86,3 +86,35 @@ def get_case_relationships(
 
     relationships = db.query(Relationship).filter(Relationship.case_id == case_id).all()
     return relationships
+
+@router.patch("/matches/{match_id}", response_model=EntityMatchResponse)
+def update_match_status(
+    match_id: uuid.UUID,
+    match_status: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Updates the review status of a candidate entity match ('ACCEPTED', 'REJECTED', 'PENDING_REVIEW').
+    """
+    match_obj = db.query(EntityMatch).filter(EntityMatch.id == match_id).first()
+    if not match_obj:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Entity match with ID '{match_id}' not found."
+        )
+
+    valid_statuses = {"ACCEPTED", "REJECTED", "PENDING_REVIEW"}
+    upper_status = match_status.upper()
+    if upper_status not in valid_statuses:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid match status '{match_status}'. Allowed: {sorted(list(valid_statuses))}"
+        )
+
+    match_obj.status = upper_status
+    db.add(match_obj)
+    db.commit()
+    db.refresh(match_obj)
+    return match_obj
+

@@ -1,0 +1,3 @@
+"""
+SECE Database Initialization Module
+"""

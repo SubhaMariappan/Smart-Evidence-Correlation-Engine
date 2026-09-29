@@ -1,0 +1,26 @@
+# Python Virtual Environments
+.venv/
+venv/
+ENV/
+
+# Python Cache & Artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environment Variables & Secrets
+.env
+
+# Storage Vault (Raw evidence data)
+storage/evidence_vault/*
+!storage/evidence_vault/.gitkeep
+
+# IDE / System files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Temporary scratch scripts
+scratch/

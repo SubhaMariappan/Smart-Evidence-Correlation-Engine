@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SECE — Case Investigation Dashboard</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+  <!-- Header Banner -->
+  <div class="header-banner">
+    <div class="header-container">
+      <div>
+        <span class="case-badge">CASE NUMBER: {{ summary.case_number }}</span>
+        <h1 style="margin: 0.5rem 0 0 0; font-size: 1.75rem;">{{ summary.title }}</h1>
+        <p style="margin: 0.25rem 0 0 0; opacity: 0.8; font-size: 0.9rem;">{{ summary.description or 'No case background provided.' }}</p>
+      </div>
+      <div>
+        <span class="status-badge status-{{ summary.status }}">{{ summary.status }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Container -->
+  <div class="container">
+
+    <!-- Metrics Grid -->
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Ingested Evidence Files</div>
+        <div class="metric-number">{{ summary.total_evidence_items }}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Canonical Entities</div>
+        <div class="metric-number">{{ summary.total_canonical_entities }}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Discovered Relationships</div>
+        <div class="metric-number">{{ summary.total_relationships }}</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Pending Matches</div>
+        <div class="metric-number">{{ summary.total_pending_matches }}</div>
+      </div>
+    </div>
+
+    <!-- Section 1: Evidence Ledger -->
+    <div class="section-card">
+      <h2 class="section-title">📁 Evidence Ledger</h2>
+      {% if evidence_list %}
+      <table>
+        <thead>
+          <tr>
+            <th>Filename</th>
+            <th>Type</th>
+            <th>File Size</th>
+            <th>SHA-256 Hash Digest</th>
+            <th>Status</th>
+            <th>Imported UTC</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ev in evidence_list %}
+          <tr>
+            <td><strong>{{ ev.original_filename }}</strong></td>
+            <td><span class="tag-badge tag-{{ ev.evidence_type }}">{{ ev.evidence_type }}</span></td>
+            <td>{{ ev.file_size_bytes }} B</td>
+            <td><span class="code-hash">{{ ev.sha256_hash[:16] }}...{{ ev.sha256_hash[-8:] }}</span></td>
+            <td><strong>{{ ev.processing_status }}</strong></td>
+            <td>{{ ev.imported_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p style="color: var(--text-muted);">No evidence files ingested for this case yet.</p>
+      {% endif %}
+    </div>
+
+    <!-- Section 2: Canonical Entities Breakdown -->
+    <div class="section-card">
+      <h2 class="section-title">🏷️ Extracted Canonical Entities</h2>
+      {% if canonical_list %}
+      <div class="entity-grid">
+        {% for entity in canonical_list %}
+        <span class="tag-badge tag-{{ entity.entity_type }}">
+          [{{ entity.entity_type }}] {{ entity.canonical_name }} ({{ entity.mention_count }} mentions)
+        </span>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p style="color: var(--text-muted);">No canonical entities extracted yet.</p>
+      {% endif %}
+    </div>
+
+    <!-- Section 3: Discovered Correlations & Relationships -->
+    <div class="section-card">
+      <h2 class="section-title">🔗 Discovered Relationships & Candidate Matches</h2>
+      
+      <h3 style="font-size: 1rem; color: var(--text-main); margin-top: 1rem;">Candidate Entity Matches (Pending Review)</h3>
+      {% if matches_list %}
+      <table>
+        <thead>
+          <tr>
+            <th>Match ID</th>
+            <th>Confidence</th>
+            <th>Match Rationale</th>
+            <th>Review Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in matches_list %}
+          <tr>
+            <td class="code-hash">{{ str(m.id)[:8] }}...</td>
+            <td><strong>{{ m.confidence_score }}</strong></td>
+            <td>{{ m.match_rationale }}</td>
+            <td><span class="status-badge status-IN_PROGRESS">{{ m.status }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p style="color: var(--text-muted);">No candidate matches discovered across evidence files.</p>
+      {% endif %}
+
+      <h3 style="font-size: 1rem; color: var(--text-main); margin-top: 1.5rem;">Entity Adjacency Relationships</h3>
+      {% if relationships_list %}
+      <table>
+        <thead>
+          <tr>
+            <th>Relationship Type</th>
+            <th>Confidence</th>
+            <th>Connecting Rationale</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in relationships_list %}
+          <tr>
+            <td><span class="tag-badge tag-IP">{{ r.relationship_type }}</span></td>
+            <td><strong>{{ r.confidence_score }}</strong></td>
+            <td>{{ r.rationale }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p style="color: var(--text-muted);">No cross-evidence relationships discovered yet.</p>
+      {% endif %}
+    </div>
+
+    <!-- Section 4: Audit Trail -->
+    <div class="section-card">
+      <h2 class="section-title">📜 Audit Provenance Log (Chain of Custody)</h2>
+      {% if summary.recent_audit_logs %}
+      <table>
+        <thead>
+          <tr>
+            <th>Action</th>
+            <th>Actor / User</th>
+            <th>Details</th>
+            <th>Timestamp (UTC)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in summary.recent_audit_logs %}
+          <tr>
+            <td><strong>{{ log.action }}</strong></td>
+            <td>{{ log.actor }}</td>
+            <td>{{ log.details }}</td>
+            <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p style="color: var(--text-muted);">No audit log entries recorded.</p>
+      {% endif %}
+    </div>
+
+  </div>
+
+</body>
+</html>

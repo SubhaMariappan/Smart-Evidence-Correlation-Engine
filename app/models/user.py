@@ -1,9 +1,14 @@
 import uuid
 from datetime import datetime, timezone
+from enum import Enum
 from sqlalchemy import Column, String, Boolean, DateTime
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.db.session import Base
+
+class UserRole(str, Enum):
+    ADMIN = "ADMIN"
+    INVESTIGATOR = "INVESTIGATOR"
 
 class User(Base):
     __tablename__ = "users"
@@ -13,7 +18,7 @@ class User(Base):
     email = Column(String(255), unique=True, nullable=False, index=True)
     hashed_password = Column(String(255), nullable=False)
     full_name = Column(String(100), nullable=True)
-    role = Column(String(20), nullable=False, default="INVESTIGATOR")
+    role = Column(String(20), nullable=False, default=UserRole.INVESTIGATOR.value)
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 

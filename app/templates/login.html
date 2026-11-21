@@ -1,28 +1,66 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="login-html">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SECE — Digital Forensics Portal Login</title>
   <link rel="stylesheet" href="/static/css/app.css">
+  <style>
+    html, body {
+      min-height: 100%;
+      height: auto !important;
+      overflow-y: auto !important;
+      overflow-x: hidden;
+      margin: 0;
+      padding: 0;
+    }
+    .auth-page, .auth-container, .login-wrapper {
+      min-height: 100vh;
+      height: auto !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 1.5rem;
+      box-sizing: border-box;
+      overflow-y: visible !important;
+    }
+    .auth-card, .login-card, .login-container {
+      width: 100%;
+      max-width: 480px;
+      margin: auto;
+      max-height: 90vh;
+      overflow-y: auto !important;
+      overscroll-behavior: contain;
+    }
+    @media (max-height: 780px) {
+      .auth-page, .auth-container, .login-wrapper {
+        align-items: flex-start;
+        padding: 1.5rem 1rem;
+      }
+    }
+  </style>
   <script src="/static/js/auth.js"></script>
 </head>
-<body class="login-body">
+<body class="login-body auth-page">
 
-  <div class="login-container">
+  <div class="login-wrapper auth-wrapper auth-container">
+    <div class="login-container login-card auth-card">
     <div class="login-header">
       <div class="logo-icon">🔍</div>
       <h1>SECE FORENSICS</h1>
       <p>Smart Evidence Correlation Engine Platform</p>
+      <button type="button" class="btn btn-secondary btn-sm" id="btn-open-guidelines" onclick="openGuidelinesModal()" style="margin: 0.75rem auto 0 auto; display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; padding: 0.35rem 0.85rem;" aria-label="Open System Description and Forensic Terms">
+        <span>📖</span> System Description & Forensic Terms
+      </button>
     </div>
 
     <!-- Toggle Buttons -->
-    <div class="auth-tabs">
-      <button id="tab-login-btn" class="auth-tab active" onclick="switchAuthTab('login')">Sign In</button>
-      <button id="tab-register-btn" class="auth-tab" onclick="switchAuthTab('register')">Register Account</button>
+    <div class="auth-tabs" role="tablist">
+      <button id="tab-login-btn" class="auth-tab active" role="tab" aria-selected="true" onclick="switchAuthTab('login')">Sign In</button>
+      <button id="tab-register-btn" class="auth-tab" role="tab" aria-selected="false" onclick="switchAuthTab('register')">Register Account</button>
     </div>
 
-    <div id="auth-alert" class="alert-box" style="display: none;"></div>
+    <div id="auth-alert" class="alert-box" style="display: none;" role="alert"></div>
 
     <!-- Login Form -->
     <form id="login-form" class="auth-form" onsubmit="handleLogin(event)">
@@ -34,7 +72,7 @@
         <label for="login-password">Security Password</label>
         <input type="password" id="login-password" required placeholder="••••••••••••" autocomplete="current-password">
       </div>
-      <button type="submit" class="btn btn-primary btn-block">Authenticate Session</button>
+      <button type="submit" id="btn-login-submit" class="btn btn-primary" style="width: 100%;">Authenticate Session</button>
     </form>
 
     <!-- Register Form -->
@@ -52,22 +90,91 @@
         <input type="text" id="reg-fullname" required placeholder="John Doe">
       </div>
       <div class="form-group">
-        <label for="reg-role">Investigator Role</label>
-        <select id="reg-role">
-          <option value="INVESTIGATOR">Forensic Investigator</option>
-          <option value="ANALYST">Cyber Analyst</option>
-          <option value="CHIEF_INVESTIGATOR">Chief Investigator</option>
+        <label for="reg-role">System Authority Role</label>
+        <select id="reg-role" required>
+          <option value="INVESTIGATOR">Investigator (Analysis & Evidence Intake)</option>
+          <option value="ADMIN">Admin (System Governance & Case Oversight)</option>
         </select>
+      </div>
+      <div class="form-group" style="margin: 1rem 0; padding: 0.65rem 0.75rem; background-color: var(--bg-input); border: 1px solid var(--bg-border); border-radius: 6px;">
+        <label style="display: flex; align-items: flex-start; gap: 0.6rem; cursor: pointer; font-size: 0.82rem; color: var(--text-primary); line-height: 1.4;">
+          <input type="checkbox" id="reg-terms-checkbox" required style="margin-top: 0.2rem; accent-color: var(--accent-primary); cursor: pointer;">
+          <span>I accept the <a href="javascript:void(0)" onclick="openGuidelinesModal()" style="color: var(--accent-primary); font-weight: 600; text-decoration: underline;">Forensic Standards & Terms of Use</a></span>
+        </label>
       </div>
       <div class="form-group">
         <label for="reg-password">Password</label>
         <input type="password" id="reg-password" required placeholder="Minimum 8 characters">
       </div>
-      <button type="submit" class="btn btn-primary btn-block">Create Investigator Account</button>
+      <button type="submit" id="btn-register-submit" class="btn btn-primary" style="width: 100%;">Create Investigator Account</button>
     </form>
 
     <div class="login-footer">
       <p>Protected System — Chain of Custody & Forensic Integrity Monitored</p>
+    </div>
+  </div>
+  </div>
+
+  <!-- PRE-LOGIN OPERATIONAL GUIDELINES & FORENSIC TERMS MODAL -->
+  <div id="modal-system-guidelines" class="modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="guidelines-modal-title">
+    <div class="modal-dialog modal-dialog-large" style="max-width: 780px;">
+      <div class="modal-header">
+        <h3 id="guidelines-modal-title" style="display: flex; align-items: center; gap: 0.5rem; font-size: 1.15rem; color: var(--text-primary); margin: 0;">
+          <span>🛡️</span> SECE Architecture & Forensic Standards Agreement
+        </h3>
+        <button class="modal-close-btn" onclick="closeGuidelinesModal()" aria-label="Close Guidelines Dialog">&times;</button>
+      </div>
+      <div class="modal-body" style="display: flex; flex-direction: column; gap: 1.25rem; font-size: 0.88rem; line-height: 1.6; color: var(--text-primary);">
+        
+        <!-- Section 1: How SECE Operates -->
+        <div style="background-color: var(--bg-input); border: 1px solid var(--bg-border); border-radius: 8px; padding: 1.25rem;">
+          <h4 style="color: var(--accent-primary); font-size: 0.95rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.4rem;">
+            <span>⚡</span> How SECE Operates (3-Stage Forensic Processing Pipeline)
+          </h4>
+          <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+            <div>
+              <strong style="color: #fda4af;">1. Cryptographic Ingestion & Baseline Vault:</strong>
+              <p style="color: var(--text-muted); margin-top: 0.2rem; font-size: 0.84rem;">
+                Heterogeneous evidence files (<code style="color: var(--accent-primary);">.txt</code>, <code style="color: var(--accent-primary);">.csv</code>, <code style="color: var(--accent-primary);">.pdf</code>) are streamed through 64KB chunk SHA-256 hashing upon entry. Baseline digests are permanently indexed into the forensic database to guarantee non-repudiation and detect disk-level tampering during on-demand re-verification audits.
+              </p>
+            </div>
+            <div>
+              <strong style="color: #fda4af;">2. Modular Parsing & Indicator Extraction:</strong>
+              <p style="color: var(--text-muted); margin-top: 0.2rem; font-size: 0.84rem;">
+                Dedicated factory parsers extract text content and technical file structure into structured JSONB. Deterministic regex engines locate high-confidence forensic indicators (<code style="color: #fda4af;">EMAIL</code>, <code style="color: #fda4af;">IPV4</code>, <code style="color: #fda4af;">PHONE_NUMBER</code>), while NLP Named Entity Recognition (NER) detects <code style="color: #fda4af;">PERSON</code> and <code style="color: #fda4af;">LOCATION</code> entities, capturing exact start/end character offsets for verifiable provenance.
+              </p>
+            </div>
+            <div>
+              <strong style="color: #fda4af;">3. Candidate Correlation & Graph Discovery:</strong>
+              <p style="color: var(--text-muted); margin-top: 0.2rem; font-size: 0.84rem;">
+                The correlation engine inspects co-occurrences and lexical similarity across separate evidence files within the active case. Hypotheses are scored and staged as candidate matches for investigator adjudication (<code style="color: var(--accent-primary);">Accept</code> or <code style="color: var(--accent-primary);">Reject</code>), while confirmed links feed real-time interactive node-link relationship graphs.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 2: Forensic Terms & Conditions -->
+        <div style="background-color: var(--bg-input); border: 1px solid var(--bg-border); border-radius: 8px; padding: 1.25rem;">
+          <h4 style="color: var(--accent-primary); font-size: 0.95rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.4rem;">
+            <span>📜</span> Forensic Terms & Conditions / Data Privacy Agreement
+          </h4>
+          <ul style="padding-left: 1.25rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.84rem;">
+            <li>
+              <strong style="color: var(--text-primary);">Mandatory Audit Logging:</strong> All evidence ingestion, parser execution, entity extraction, correlation pipelines, and status modifications are recorded as permanent, append-only chain-of-custody audit logs with investigator UUID and UTC timestamps.
+            </li>
+            <li>
+              <strong style="color: var(--text-primary);">Decision-Support Boundary:</strong> SECE is strictly a forensic decision-support workstation. Algorithmic inferences and match confidence scores are assistive hypotheses and require formal human verification by an authorized investigator or administrator before being admitted into forensic case files.
+            </li>
+            <li>
+              <strong style="color: var(--text-primary);">Access Control & Isolation:</strong> Case containers and ingested vault evidence are segregated. Access is governed under strict Two-Role RBAC: <span class="user-role-badge">ADMIN</span> for case governance and oversight, and <span class="user-role-badge">INVESTIGATOR</span> for evidence processing and candidate adjudication.
+            </li>
+          </ul>
+        </div>
+
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--bg-border);">
+        <button type="button" class="btn btn-primary" onclick="acceptAndCloseGuidelines()">I Acknowledge & Accept Terms</button>
+      </div>
     </div>
   </div>
 
@@ -92,6 +199,10 @@
         document.getElementById('register-form').style.display = 'block';
         document.getElementById('login-form').style.display = 'none';
       }
+
+      const card = document.querySelector('.login-container');
+      if (card) card.scrollTop = 0;
+      window.scrollTo(0, 0);
     }
 
     function showAlert(msg, isError = true) {
@@ -103,6 +214,10 @@
 
     async function handleLogin(e) {
       e.preventDefault();
+      const submitBtn = document.getElementById('btn-login-submit');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner"></span> Authenticating...';
+
       const username = document.getElementById('login-username').value.trim();
       const password = document.getElementById('login-password').value;
 
@@ -117,6 +232,8 @@
 
         if (!response.ok) {
           showAlert(data.detail || 'Authentication failed. Please check credentials.');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Authenticate Session';
           return;
         }
 
@@ -132,14 +249,49 @@
         }
 
         showAlert('Authentication successful! Redirecting...', false);
-        setTimeout(() => { window.location.href = '/app'; }, 600);
+        setTimeout(() => { window.location.href = '/app'; }, 500);
       } catch (err) {
         showAlert('Network error connecting to backend server.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Authenticate Session';
       }
     }
 
+    function openGuidelinesModal() {
+      const modal = document.getElementById('modal-system-guidelines');
+      if (modal) modal.style.display = 'flex';
+    }
+
+    function closeGuidelinesModal() {
+      const modal = document.getElementById('modal-system-guidelines');
+      if (modal) modal.style.display = 'none';
+    }
+
+    function acceptAndCloseGuidelines() {
+      closeGuidelinesModal();
+      const termsCheck = document.getElementById('reg-terms-checkbox');
+      if (termsCheck) termsCheck.checked = true;
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeGuidelinesModal();
+      }
+    });
+
     async function handleRegister(e) {
       e.preventDefault();
+      const submitBtn = document.getElementById('btn-register-submit');
+      const termsCheck = document.getElementById('reg-terms-checkbox');
+      
+      if (termsCheck && !termsCheck.checked) {
+        showAlert('Please accept the Forensic Standards & Terms of Use to register.');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner"></span> Registering...';
+
       const payload = {
         username: document.getElementById('reg-username').value.trim(),
         email: document.getElementById('reg-email').value.trim(),
@@ -159,6 +311,8 @@
 
         if (!response.ok) {
           showAlert(data.detail || 'Registration failed.');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Create Investigator Account';
           return;
         }
 
@@ -174,12 +328,13 @@
         setToken(loginData.access_token);
         setUser(data);
 
-        setTimeout(() => { window.location.href = '/app'; }, 800);
+        setTimeout(() => { window.location.href = '/app'; }, 600);
       } catch (err) {
         showAlert('Error registering user account.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Investigator Account';
       }
     }
   </script>
-
 </body>
 </html>

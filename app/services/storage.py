@@ -11,7 +11,10 @@ def sanitize_filename(filename: str) -> str:
     Sanitizes raw uploaded filename to prevent directory traversal attacks (e.g., ../../etc/passwd)
     and removes special characters that cause filesystem errors.
     """
-    basename = os.path.basename(filename)
+    # Normalize slashes to eliminate cross-platform traversal tricks
+    normalized = (filename or "").replace("\\", "/")
+    basename = os.path.basename(normalized)
+    # Strip out any potential traversal leftovers or dangerous characters
     clean_name = re.sub(r'[^a-zA-Z0-9._-]', '_', basename)
     clean_name = clean_name.lstrip('.')
     if not clean_name:

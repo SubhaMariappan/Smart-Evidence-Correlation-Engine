@@ -7,7 +7,7 @@ from app.models.case import Case
 from app.models.user import User
 from app.models.audit import AuditLog
 from app.schemas.case import CaseCreate, CaseUpdate, CaseRead
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, require_role, require_any_role
 
 router = APIRouter()
 
@@ -15,11 +15,11 @@ router = APIRouter()
 def create_case(
     case_in: CaseCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_any_role(["INVESTIGATOR", "ADMIN"]))
 ):
     """
     Create a new forensic case container.
-    Authenticated investigator is automatically assigned as created_by_id.
+    Authenticated investigator or administrator is automatically assigned as created_by_id.
     """
     # Check if case_number already exists
     existing_case = db.query(Case).filter(Case.case_number == case_in.case_number).first()
@@ -36,6 +36,12 @@ def create_case(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid status '{case_in.status}'. Allowed: {sorted(list(valid_statuses))}"
+        )
+
+    if status_upper in ["CLOSED", "ARCHIVED"] and current_user.role != "ADMIN":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Administrative governance approval required to initialize a case in CLOSED or ARCHIVED status."
         )
 
     new_case = Case(
@@ -124,6 +130,13 @@ def update_case(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Invalid status '{update_data['status']}'. Allowed: {sorted(list(valid_statuses))}"
             )
+        
+        # Enforce case governance: only ADMIN can close or archive cases
+        if new_status in ["CLOSED", "ARCHIVED"] and current_user.role != "ADMIN":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Administrative governance approval required to close or archive forensic cases."
+            )
         update_data["status"] = new_status
 
     for field, value in update_data.items():
@@ -145,3 +158,34 @@ def update_case(
         db.commit()
 
     return case
+
+@router.delete("/{case_id}", status_code=status.HTTP_200_OK)
+def delete_case(
+    case_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(require_role("ADMIN"))
+):
+    """
+    Administrative endpoint: Permanently delete a forensic case container and all associated records.
+    Strictly restricted to ADMIN role. Investigators are forbidden from deleting cases.
+    """
+    case = db.query(Case).filter(Case.id == case_id).first()
+    if not case:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Case with ID '{case_id}' not found."
+        )
+
+    case_num = case.case_number
+    # Log deletion in audit logs before removing
+    audit_entry = AuditLog(
+        user_id=admin_user.id,
+        action="CASE_DELETED",
+        details=f"Admin '{admin_user.username}' permanently deleted case container '{case_num}'"
+    )
+    db.add(audit_entry)
+
+    db.delete(case)
+    db.commit()
+
+    return {"message": f"Case container '{case_num}' permanently deleted by Administrator."}

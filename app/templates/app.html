@@ -12,35 +12,46 @@
   <div class="app-shell">
     
     <!-- FIXED SIDEBAR -->
-    <aside class="sidebar">
+    <aside class="sidebar" aria-label="Investigation Navigation">
       <div class="sidebar-header">
         <span class="logo">🔍</span>
         <h2>SECE FORENSICS</h2>
       </div>
 
-      <nav class="sidebar-nav">
-        <a id="nav-overview" class="nav-item active" onclick="switchTab('overview')">
+      <nav class="sidebar-nav" role="tablist">
+        <button id="nav-overview" class="nav-item active" data-action="switch-tab" data-tab="overview" role="tab" aria-selected="true">
           <span>📊</span> Overview / Dashboard
-        </a>
-        <a id="nav-cases" class="nav-item" onclick="switchTab('cases')">
+        </button>
+        <button id="nav-cases" class="nav-item" data-action="switch-tab" data-tab="cases" role="tab" aria-selected="false">
           <span>📁</span> Case Management
-        </a>
-        <a id="nav-evidence" class="nav-item" onclick="switchTab('evidence')">
+        </button>
+        <button id="nav-evidence" class="nav-item" data-action="switch-tab" data-tab="evidence" role="tab" aria-selected="false">
           <span>📦</span> Evidence Ledger
-        </a>
-        <a id="nav-entities" class="nav-item" onclick="switchTab('entities')">
+        </button>
+        <button id="nav-entities" class="nav-item" data-action="switch-tab" data-tab="entities" role="tab" aria-selected="false">
           <span>🏷️</span> Extracted Entities
-        </a>
-        <a id="nav-correlation" class="nav-item" onclick="switchTab('correlation')">
+        </button>
+        <button id="nav-correlation" class="nav-item" data-action="switch-tab" data-tab="correlation" role="tab" aria-selected="false">
           <span>🕸️</span> Correlation Engine
-        </a>
-        <a id="nav-audit" class="nav-item" onclick="switchTab('audit')">
+        </button>
+        <button id="nav-timeline" class="nav-item" data-action="switch-tab" data-tab="timeline" role="tab" aria-selected="false">
+          <span>⏱️</span> Timeline Reconstruction
+        </button>
+        <button id="nav-graph" class="nav-item" data-action="switch-tab" data-tab="graph" role="tab" aria-selected="false">
+          <span>📈</span> Relationship Graph
+        </button>
+        <button id="nav-audit" class="nav-item" data-action="switch-tab" data-tab="audit" role="tab" aria-selected="false">
           <span>📜</span> Chain of Custody
-        </a>
+        </button>
+        <!-- Admin-Only Tab (Shown only when authenticated role is ADMIN) -->
+        <button id="nav-admin" class="nav-item" data-action="switch-tab" data-tab="admin" role="tab" aria-selected="false" style="display: none; border-left-color: #fda4af;">
+          <span>🛡️</span> Governance & Users
+          <span class="user-role-badge role-admin" style="margin-left: auto; font-size: 0.65rem; padding: 0.05rem 0.35rem;">ADMIN</span>
+        </button>
       </nav>
 
       <div class="sidebar-footer">
-        <p>SECE Platform v1.0.0</p>
+        <p>SECE Platform v1.2.0</p>
         <p>Forensic Hash & Chain Verified</p>
       </div>
     </aside>
@@ -52,27 +63,71 @@
       <header class="top-header">
         <div class="case-selector-wrap">
           <label for="active-case-select">Active Case:</label>
-          <select id="active-case-select" class="case-select" onchange="handleCaseSelectChange(this.value)">
+          <select id="active-case-select" class="case-select" aria-label="Select Active Forensic Case">
             <option value="">Loading Cases...</option>
           </select>
-          <button class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" onclick="openCreateCaseModal()">+ New Case</button>
+          <button class="btn btn-secondary btn-sm" data-action="open-modal" data-target="modal-create-case" aria-label="Create New Forensic Case">+ New Case</button>
         </div>
 
-        <div class="user-profile">
-          <div class="user-badge">
-            <span>🛡️</span>
-            <span id="user-display-name">Investigator</span>
-            <span id="user-role-tag" class="user-role-badge">INVESTIGATOR</span>
-          </div>
-          <button class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" onclick="logout()">Logout</button>
+        <div class="header-right">
+          <!-- Workstation User Manual / Guidance Trigger -->
+          <button class="btn btn-secondary btn-sm" id="btn-guide-modal" data-action="open-modal" data-target="modal-user-guide" aria-label="Open Workstation User Manual & Feature Guidance" style="display: flex; align-items: center; gap: 0.35rem;">
+            <span>📖</span> <span>User Manual</span>
+          </button>
+
+          <!-- Clickable Investigator Profile Trigger -->
+          <button class="profile-trigger-btn" id="profile-trigger-btn" data-action="toggle-profile" aria-label="Open Investigator Profile & Account Settings" aria-expanded="false">
+            <div class="user-avatar-badge">
+              <span class="avatar-icon" id="user-avatar-icon">🛡️</span>
+              <span id="user-display-name">Investigator</span>
+              <span id="user-role-tag" class="user-role-badge">INVESTIGATOR</span>
+              <span class="profile-caret">▼</span>
+            </div>
+          </button>
         </div>
       </header>
+
+      <!-- COLLAPSIBLE INVESTIGATION WORKFLOW STEPPER BANNER -->
+      <section class="stepper-banner" id="workflow-stepper-banner" aria-label="Investigation Workflow Stepper">
+        <div class="stepper-header">
+          <span>Standard Investigation Workflow</span>
+          <button class="stepper-toggle-btn" data-action="toggle-stepper" aria-label="Toggle Stepper Details">
+            <span id="stepper-toggle-icon">▲</span> <span id="stepper-toggle-text">Collapse Stepper</span>
+          </button>
+        </div>
+        <div class="stepper-steps" id="stepper-steps-container">
+          <div class="stepper-step active" data-action="step-nav" data-step="cases" tabindex="0" role="button" aria-label="Step 1: Create or Select Case">
+            <span class="step-num">1</span>
+            <span>Create / Select Case</span>
+          </div>
+          <span class="step-arrow">➔</span>
+          <div class="stepper-step" data-action="step-nav" data-step="evidence" tabindex="0" role="button" aria-label="Step 2: Ingest Evidence">
+            <span class="step-num">2</span>
+            <span>Ingest Vault Evidence</span>
+          </div>
+          <span class="step-arrow">➔</span>
+          <div class="stepper-step" data-action="step-nav" data-step="evidence" tabindex="0" role="button" aria-label="Step 3: Parse Content">
+            <span class="step-num">3</span>
+            <span>Parse File Content</span>
+          </div>
+          <span class="step-arrow">➔</span>
+          <div class="stepper-step" data-action="step-nav" data-step="entities" tabindex="0" role="button" aria-label="Step 4: Extract Indicators">
+            <span class="step-num">4</span>
+            <span>Extract Indicators</span>
+          </div>
+          <span class="step-arrow">➔</span>
+          <div class="stepper-step" data-action="step-nav" data-step="correlation" tabindex="0" role="button" aria-label="Step 5: Run Correlation">
+            <span class="step-num">5</span>
+            <span>Run Correlation & Links</span>
+          </div>
+        </div>
+      </section>
 
       <!-- CONTENT WORKSPACE -->
       <main class="content-workspace">
         
         <!-- PANE 1: OVERVIEW -->
-        <section id="pane-overview" class="tab-pane active">
+        <section id="pane-overview" class="tab-pane active" role="tabpanel" aria-labelledby="nav-overview">
           <div class="metrics-grid">
             <div class="card">
               <div class="metric-lbl">Total Case Evidence Files</div>
@@ -122,11 +177,11 @@
         </section>
 
         <!-- PANE 2: CASE MANAGEMENT -->
-        <section id="pane-cases" class="tab-pane">
+        <section id="pane-cases" class="tab-pane" role="tabpanel" aria-labelledby="nav-cases">
           <div class="card">
             <div class="card-header">
               <h3 class="card-title"><span>📁</span> Forensic Cases Directory</h3>
-              <button class="btn btn-primary" onclick="openCreateCaseModal()">+ Create New Case</button>
+              <button class="btn btn-primary btn-sm" data-action="open-modal" data-target="modal-create-case" aria-label="Open Create Case Dialog">+ Create New Case</button>
             </div>
             <table>
               <thead>
@@ -147,11 +202,24 @@
         </section>
 
         <!-- PANE 3: EVIDENCE LEDGER -->
-        <section id="pane-evidence" class="tab-pane">
+        <section id="pane-evidence" class="tab-pane" role="tabpanel" aria-labelledby="nav-evidence">
           <div class="card">
             <div class="card-header">
               <h3 class="card-title"><span>📦</span> Ingested Evidence Vault Ledger</h3>
-              <button class="btn btn-primary" onclick="openUploadEvidenceModal()">+ Upload Evidence File</button>
+              <button class="btn btn-primary btn-sm" data-action="open-modal" data-target="modal-upload-evidence" aria-label="Open Upload Evidence Dialog">+ Upload Evidence File</button>
+            </div>
+            
+            <!-- Granular Action Button Legend Strip -->
+            <div class="evidence-legend-strip" style="background-color: var(--bg-input); border: 1px solid var(--bg-border); border-radius: 6px; padding: 0.75rem 1rem; margin-bottom: 1rem; font-size: 0.8rem;">
+              <div style="color: var(--accent-primary); font-weight: 700; display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.4rem;">
+                <span>ℹ️</span> Evidence Vault Action Legend:
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.5rem; color: var(--text-muted); font-size: 0.78rem;">
+                <div><strong style="color: var(--text-primary);">⚡ Parse:</strong> Runs format parser (.txt, .csv, .pdf) extracting text and JSONB metadata.</div>
+                <div><strong style="color: var(--text-primary);">🏷️ Extract:</strong> Runs regex & NLP NER to discover indicators with character offsets.</div>
+                <div><strong style="color: var(--text-primary);">🛡️ Verify:</strong> Recomputes live disk SHA-256 digest to verify cryptographic integrity.</div>
+                <div><strong style="color: var(--text-primary);">👁️ Inspect:</strong> Opens real evidence inspection modal with highlighted mention offsets.</div>
+              </div>
             </div>
             <table>
               <thead>
@@ -172,11 +240,11 @@
         </section>
 
         <!-- PANE 4: EXTRACTED ENTITIES -->
-        <section id="pane-entities" class="tab-pane">
+        <section id="pane-entities" class="tab-pane" role="tabpanel" aria-labelledby="nav-entities">
           <div class="card">
             <div class="card-header">
               <h3 class="card-title"><span>🏷️</span> Distinct Canonical Entities Directory</h3>
-              <div style="display: flex; gap: 0.5rem;" id="entity-type-filters">
+              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;" id="entity-type-filters">
                 <!-- Entity Type Filters generated dynamically -->
               </div>
             </div>
@@ -184,7 +252,7 @@
               <p style="color: var(--text-muted);">Loading canonical entities...</p>
             </div>
 
-            <h3 class="card-title" style="margin-bottom: 1rem;"><span>📍</span> Raw Entity Mentions & Text Context</h3>
+            <h3 class="card-title" style="margin-bottom: 1rem;"><span>📍</span> Raw Entity Mentions & Provenance Offsets</h3>
             <table>
               <thead>
                 <tr>
@@ -203,29 +271,41 @@
         </section>
 
         <!-- PANE 5: CORRELATION ENGINE -->
-        <section id="pane-correlation" class="tab-pane">
+        <section id="pane-correlation" class="tab-pane" role="tabpanel" aria-labelledby="nav-correlation">
           <div class="card">
             <div class="card-header">
               <h3 class="card-title"><span>🕸️</span> Candidate Entity Matching & Link Discovery</h3>
-              <button class="btn btn-primary" onclick="triggerCorrelationPipeline()">⚡ Run Correlation Engine</button>
+              <button class="btn btn-primary btn-sm" data-action="run-correlation" id="btn-run-correlation" aria-label="Run Evidence Correlation Pipeline">⚡ Run Correlation Engine</button>
+            </div>
+
+            <!-- Granular Correlation Legend Strip -->
+            <div class="correlation-legend-strip" style="background-color: var(--bg-input); border: 1px solid var(--bg-border); border-radius: 6px; padding: 0.75rem 1rem; margin-bottom: 1rem; font-size: 0.8rem;">
+              <div style="color: var(--accent-primary); font-weight: 700; display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.4rem;">
+                <span>ℹ️</span> Correlation Engine Guidance:
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.5rem; color: var(--text-muted); font-size: 0.78rem;">
+                <div><strong style="color: var(--text-primary);">⚡ Run Correlation:</strong> Analyzes co-occurrences of indicators across all parsed evidence items in active case.</div>
+                <div><strong style="color: #4ade80;">Accept:</strong> Confirms algorithmic match as verified ground truth and updates link confidence.</div>
+                <div><strong style="color: #f87171;">Reject:</strong> Dismisses candidate match as false positive, pruning relationship link.</div>
+              </div>
             </div>
             
-            <h4 style="color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase; margin-bottom: 1rem;">Candidate Entity Matches (Pending Review)</h4>
+            <h4 style="color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; margin-bottom: 0.85rem;">Candidate Entity Matches (Pending Review)</h4>
             <table>
               <thead>
                 <tr>
                   <th>Confidence</th>
                   <th>Match Rationale</th>
                   <th>Status</th>
-                  <th>Action</th>
+                  <th>Review Decision</th>
                 </tr>
               </thead>
               <tbody id="matches-table-body">
-                <tr><td colspan="4" style="color: var(--text-muted);">No candidate matches discovered yet. Run correlation engine.</td></tr>
+                <tr><td colspan="4" style="color: var(--text-muted);">No candidate matches discovered yet. Click "⚡ Run Correlation Engine".</td></tr>
               </tbody>
             </table>
 
-            <h4 style="color: var(--text-muted); font-size: 0.9rem; text-transform: uppercase; margin-top: 2rem; margin-bottom: 1rem;">Cross-Evidence Entity Relationships</h4>
+            <h4 style="color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; margin-top: 2rem; margin-bottom: 0.85rem;">Cross-Evidence Entity Relationships</h4>
             <table>
               <thead>
                 <tr>
@@ -235,14 +315,70 @@
                 </tr>
               </thead>
               <tbody id="relationships-table-body">
-                <tr><td colspan="3" style="color: var(--text-muted);">No relationships generated yet. Run correlation engine.</td></tr>
+                <tr><td colspan="3" style="color: var(--text-muted);">No relationships generated yet. Click "⚡ Run Correlation Engine".</td></tr>
               </tbody>
             </table>
           </div>
         </section>
 
-        <!-- PANE 6: CHAIN OF CUSTODY AUDIT -->
-        <section id="pane-audit" class="tab-pane">
+        <!-- PANE 6: TIMELINE RECONSTRUCTION (M12) -->
+        <section id="pane-timeline" class="tab-pane" role="tabpanel" aria-labelledby="nav-timeline">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title"><span>⏱️</span> Chronological Forensic Timeline</h3>
+              <button class="btn btn-secondary btn-sm" data-action="open-modal" data-target="modal-add-timeline-event" aria-label="Add Manual Timeline Milestone">+ Add Milestone</button>
+            </div>
+            <div id="timeline-stream-container" class="timeline-stream">
+              <p style="color: var(--text-muted);">Loading reconstructed case timeline...</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- PANE 7: INTERACTIVE RELATIONSHIP GRAPH (M13) -->
+        <section id="pane-graph" class="tab-pane" role="tabpanel" aria-labelledby="nav-graph">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title"><span>📈</span> Interactive Entity & Evidence Network Graph</h3>
+              <div style="display: flex; gap: 0.5rem;">
+                <button class="btn btn-secondary btn-sm" id="btn-graph-reset" aria-label="Reset Graph Zoom">Reset View</button>
+                <button class="btn btn-primary btn-sm" id="btn-graph-refresh" aria-label="Refresh Graph Data">↻ Reload Graph</button>
+              </div>
+            </div>
+            <div class="graph-container" id="graph-wrapper">
+              <canvas id="graph-canvas"></canvas>
+              
+              <!-- Graph Controls Overlay -->
+              <div class="graph-controls">
+                <button class="btn btn-secondary btn-sm" id="btn-zoom-in" aria-label="Zoom In Graph">+</button>
+                <button class="btn btn-secondary btn-sm" id="btn-zoom-out" aria-label="Zoom Out Graph">−</button>
+              </div>
+
+              <!-- Graph Category Legend -->
+              <div class="graph-legend">
+                <span class="legend-pill"><span class="legend-dot" style="background-color: #3b82f6;"></span> Evidence File</span>
+                <span class="legend-pill"><span class="legend-dot" style="background-color: #00e5a3;"></span> Email</span>
+                <span class="legend-pill"><span class="legend-dot" style="background-color: #f59e0b;"></span> IPv4</span>
+                <span class="legend-pill"><span class="legend-dot" style="background-color: #10b981;"></span> Phone</span>
+                <span class="legend-pill"><span class="legend-dot" style="background-color: #ec4899;"></span> Person</span>
+                <span class="legend-pill"><span class="legend-dot" style="background-color: #a855f7;"></span> Location</span>
+                <span class="legend-pill"><span class="legend-dot" style="background-color: #e11d48;"></span> Account</span>
+              </div>
+
+              <!-- Node Detail Drawer -->
+              <div class="graph-info-drawer" id="graph-node-drawer">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                  <strong id="drawer-node-label" style="font-size: 0.95rem; color: var(--text-primary);">Node</strong>
+                  <span id="drawer-node-type" class="badge badge-open">ENTITY</span>
+                </div>
+                <p id="drawer-node-details" style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 0.75rem;">Details...</p>
+                <button class="btn btn-secondary btn-sm" style="width: 100%;" id="btn-close-drawer">Close</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- PANE 8: CHAIN OF CUSTODY AUDIT (M15) -->
+        <section id="pane-audit" class="tab-pane" role="tabpanel" aria-labelledby="nav-audit">
           <div class="card">
             <div class="card-header">
               <h3 class="card-title"><span>📜</span> Immutable Audit Log & Chain of Custody</h3>
@@ -263,18 +399,69 @@
           </div>
         </section>
 
+        <!-- PANE 9: ADMINISTRATIVE GOVERNANCE & USER DIRECTORY (ADMIN ONLY) -->
+        <section id="pane-admin" class="tab-pane" role="tabpanel" aria-labelledby="nav-admin">
+          <div class="card" style="margin-bottom: 1.5rem;">
+            <div class="card-header">
+              <h3 class="card-title"><span>👥</span> System User Accounts Management</h3>
+              <span class="user-role-badge role-admin">ADMINISTRATOR GOVERNANCE ONLY</span>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
+              Manage registered investigators and administrators. Toggle account activation status or inspect assigned authorities.
+            </p>
+            <table>
+              <thead>
+                <tr>
+                  <th>Username</th>
+                  <th>Full Name</th>
+                  <th>Email</th>
+                  <th>Authority Role</th>
+                  <th>Account Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="admin-users-table-body">
+                <tr><td colspan="6" style="color: var(--text-muted); text-align: center;">Loading system user directory...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title"><span>🛡️</span> System-Wide Immutable Audit Provenance</h3>
+              <button class="btn btn-secondary btn-sm" id="btn-refresh-admin-audit" data-action="refresh-admin-audit">🔄 Refresh Global Logs</button>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
+              Non-repudiable audit logs across all cases, user sessions, evidence files, and pipeline executions.
+            </p>
+            <table>
+              <thead>
+                <tr>
+                  <th>Action</th>
+                  <th>Actor / User</th>
+                  <th>Details</th>
+                  <th>Timestamp (UTC)</th>
+                </tr>
+              </thead>
+              <tbody id="admin-audit-table-body">
+                <tr><td colspan="4" style="color: var(--text-muted); text-align: center;">Loading global audit logs...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
       </main>
     </div>
   </div>
 
   <!-- MODAL: CREATE CASE -->
-  <div id="modal-create-case" class="modal-backdrop" style="display: none;">
+  <div id="modal-create-case" class="modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="create-case-title">
     <div class="modal-dialog">
       <div class="modal-header">
-        <h3>Create New Forensic Case</h3>
-        <button class="close-btn" onclick="closeCreateCaseModal()">&times;</button>
+        <h3 id="create-case-title">Create New Forensic Case Container</h3>
+        <button class="close-btn" data-action="close-modal" aria-label="Close Modal">&times;</button>
       </div>
-      <form onsubmit="handleCreateCaseSubmit(event)">
+      <form id="form-create-case">
         <div class="form-group">
           <label for="new-case-number">Case Number / Index</label>
           <input type="text" id="new-case-number" required placeholder="e.g. SECE-2026-010">
@@ -296,21 +483,21 @@
           </select>
         </div>
         <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
-          <button type="button" class="btn btn-secondary" onclick="closeCreateCaseModal()">Cancel</button>
-          <button type="submit" class="btn btn-primary">Create Case Container</button>
+          <button type="button" class="btn btn-secondary" data-action="close-modal">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-case">Create Case Container</button>
         </div>
       </form>
     </div>
   </div>
 
   <!-- MODAL: UPLOAD EVIDENCE -->
-  <div id="modal-upload-evidence" class="modal-backdrop" style="display: none;">
+  <div id="modal-upload-evidence" class="modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="upload-evidence-title">
     <div class="modal-dialog">
       <div class="modal-header">
-        <h3>Upload Evidence File to Vault</h3>
-        <button class="close-btn" onclick="closeUploadEvidenceModal()">&times;</button>
+        <h3 id="upload-evidence-title">Upload Evidence File to Vault</h3>
+        <button class="close-btn" data-action="close-modal" aria-label="Close Modal">&times;</button>
       </div>
-      <form onsubmit="handleUploadEvidenceSubmit(event)">
+      <form id="form-upload-evidence">
         <div class="form-group">
           <label for="upload-file">Select Raw Evidence File (.txt, .eml, .csv, .pdf)</label>
           <input type="file" id="upload-file" required>
@@ -329,15 +516,413 @@
         </div>
         <div class="form-group">
           <label for="upload-desc">Source Description</label>
-          <input type="text" id="upload-desc" placeholder="e.g. Suspect Laptop Hard Drive Dump">
+          <input type="text" id="upload-desc" placeholder="e.g. Suspect Hard Drive Dump">
         </div>
         <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
-          <button type="button" class="btn btn-secondary" onclick="closeUploadEvidenceModal()">Cancel</button>
-          <button type="submit" class="btn btn-primary">Save to Immutable Vault</button>
+          <button type="button" class="btn btn-secondary" data-action="close-modal">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-upload">Save to Immutable Vault</button>
         </div>
       </form>
     </div>
   </div>
+
+  <!-- MODAL: VIEW REAL DATA & PROVENANCE INSPECTION -->
+  <div id="modal-view-raw-evidence" class="modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="view-evidence-title">
+    <div class="modal-dialog modal-dialog-large">
+      <div class="modal-header">
+        <div>
+          <h3 id="view-evidence-title">Evidence Inspection & Provenance Audit</h3>
+          <p id="view-evidence-subtitle" style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.25rem;">File SHA-256 Digest & Raw Content Viewer</p>
+        </div>
+        <button class="close-btn" data-action="close-modal" aria-label="Close Modal">&times;</button>
+      </div>
+      
+      <!-- File Metadata Ribbon -->
+      <div style="background-color: var(--bg-input); border: 1px solid var(--bg-border); padding: 0.75rem 1rem; border-radius: 6px; display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; margin-bottom: 1rem; font-size: 0.85rem;">
+        <div><strong>Filename:</strong> <span id="raw-modal-filename">-</span></div>
+        <div><strong>Category:</strong> <span id="raw-modal-category" class="badge badge-open">-</span></div>
+        <div><strong>Size:</strong> <span id="raw-modal-size">-</span></div>
+        <div style="flex: 1; min-width: 250px;">
+          <strong>SHA-256:</strong> <code id="raw-modal-hash" style="font-size: 0.75rem; color: var(--accent-primary);">-</code>
+        </div>
+      </div>
+
+      <div class="inspection-grid">
+        <!-- Left: Raw Document Text -->
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <strong style="font-size: 0.85rem; color: var(--text-primary); text-transform: uppercase;">Raw Parsed File Text</strong>
+            <span id="raw-text-chars" style="font-size: 0.75rem; color: var(--text-muted);">0 chars</span>
+          </div>
+          <div class="inspection-pane">
+            <pre id="raw-modal-text-content" class="raw-text-viewer">Loading file text...</pre>
+          </div>
+        </div>
+
+        <!-- Right: Detected Indicators & Provenance Offsets -->
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <strong style="font-size: 0.85rem; color: var(--text-primary); text-transform: uppercase;">Detected Indicators & Offsets</strong>
+            <span id="raw-mentions-count" style="font-size: 0.75rem; color: var(--text-muted);">0 found</span>
+          </div>
+          <div class="inspection-pane" style="padding: 0;">
+            <table style="margin-top: 0;">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Value</th>
+                  <th>Offset</th>
+                </tr>
+              </thead>
+              <tbody id="raw-modal-mentions-tbody">
+                <tr><td colspan="3" style="color: var(--text-muted); text-align: center;">No indicators extracted yet.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 1.5rem;">
+        <button type="button" class="btn btn-secondary" data-action="close-modal">Close Viewer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD CUSTOM TIMELINE EVENT -->
+  <div id="modal-add-timeline-event" class="modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="add-timeline-title">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="add-timeline-title">Record Timeline Milestone</h3>
+        <button class="close-btn" data-action="close-modal" aria-label="Close Modal">&times;</button>
+      </div>
+      <form id="form-add-timeline">
+        <div class="form-group">
+          <label for="timeline-event-title">Milestone Title</label>
+          <input type="text" id="timeline-event-title" required placeholder="e.g. Warrant Executed or Suspect Identified">
+        </div>
+        <div class="form-group">
+          <label for="timeline-event-datetime">Timestamp (Date & Time)</label>
+          <input type="datetime-local" id="timeline-event-datetime" required>
+        </div>
+        <div class="form-group">
+          <label for="timeline-event-type">Category</label>
+          <select id="timeline-event-type">
+            <option value="INVESTIGATOR_NOTE">Investigator Milestone</option>
+            <option value="COMMUNICATION">Suspect Communication</option>
+            <option value="TRANSACTION">Financial Transaction</option>
+            <option value="ACCESS">System / Server Access</option>
+            <option value="OTHER">Other Event</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="timeline-event-desc">Contextual Description</label>
+          <textarea id="timeline-event-desc" rows="3" placeholder="Forensic details, witness statements, or server IP observations..."></textarea>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+          <button type="button" class="btn btn-secondary" data-action="close-modal">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-timeline">Record Milestone</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: WORKSTATION USER MANUAL & FEATURE GUIDANCE -->
+  <div id="modal-user-guide" class="modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="user-guide-title">
+    <div class="modal-dialog modal-dialog-large" style="max-width: 860px;">
+      <div class="modal-header">
+        <h3 id="user-guide-title" style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-primary); margin: 0;">
+          <span>📖</span> SECE Workstation User Manual & Feature Guidance
+        </h3>
+        <button class="close-btn" data-action="close-modal" aria-label="Close User Manual Dialog">&times;</button>
+      </div>
+      <div class="modal-body" style="display: flex; flex-direction: column; gap: 1.25rem; font-size: 0.88rem; line-height: 1.6; color: var(--text-primary);">
+        
+        <p style="color: var(--text-muted); margin: 0;">
+          Welcome to the Smart Evidence Correlation Engine (SECE). This forensic manual details every workspace view, operational module, and action control available to investigators and administrators.
+        </p>
+
+        <!-- Section 1: Workstation View Explanations -->
+        <div style="background-color: var(--bg-input); border: 1px solid var(--bg-border); border-radius: 8px; padding: 1.25rem;">
+          <h4 style="color: var(--accent-primary); font-size: 0.95rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.4rem;">
+            <span>🧭</span> Workspace Navigation & Module Directory
+          </h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 0.85rem;">
+            <div style="border-left: 2px solid var(--accent-primary); padding-left: 0.65rem;">
+              <strong style="color: var(--text-primary);">📊 Executive Brief (Overview):</strong>
+              <p style="color: var(--text-muted); margin-top: 0.2rem; font-size: 0.82rem;">
+                Real-time case metrics grid displaying total evidence files, canonical entity profiles, cross-evidence relationships, and pending candidate matches, alongside the recent chain-of-custody activity trail.
+              </p>
+            </div>
+            <div style="border-left: 2px solid var(--accent-primary); padding-left: 0.65rem;">
+              <strong style="color: var(--text-primary);">📁 Case Manager:</strong>
+              <p style="color: var(--text-muted); margin-top: 0.2rem; font-size: 0.82rem;">
+                Enables creating forensic case containers, indexing them by unique case number, switching active investigation scope, and updating investigation life-cycle status (<code style="color: #fda4af;">OPEN</code>, <code style="color: #fda4af;">IN_PROGRESS</code>, <code style="color: #fda4af;">CLOSED</code>).
+              </p>
+            </div>
+            <div style="border-left: 2px solid var(--accent-primary); padding-left: 0.65rem;">
+              <strong style="color: var(--text-primary);">📦 Evidence Vault:</strong>
+              <p style="color: var(--text-muted); margin-top: 0.2rem; font-size: 0.82rem;">
+                Secure file intake repository. Supports raw file ingestion (<code style="color: #fda4af;">.txt</code>, <code style="color: #fda4af;">.csv</code>, <code style="color: #fda4af;">.pdf</code>), automated 64KB chunk streaming SHA-256 baseline hashing, live disk integrity re-verification, format parsing, and raw data inspection.
+              </p>
+            </div>
+            <div style="border-left: 2px solid var(--accent-primary); padding-left: 0.65rem;">
+              <strong style="color: var(--text-primary);">🏷️ Entity Catalog:</strong>
+              <p style="color: var(--text-muted); margin-top: 0.2rem; font-size: 0.82rem;">
+                Directory of canonical normalized indicators (<code style="color: #fda4af;">EMAIL</code>, <code style="color: #fda4af;">IPV4</code>, <code style="color: #fda4af;">PHONE</code>, <code style="color: #fda4af;">PERSON</code>, <code style="color: #fda4af;">LOCATION</code>) with type filtering, mention frequency stats, and exact character offset contexts.
+              </p>
+            </div>
+            <div style="border-left: 2px solid var(--accent-primary); padding-left: 0.65rem;">
+              <strong style="color: var(--text-primary);">🕸️ Correlator Hub:</strong>
+              <p style="color: var(--text-muted); margin-top: 0.2rem; font-size: 0.82rem;">
+                Discovers cross-evidence co-occurrences and evaluates candidate entity matches with confidence scoring. Investigators adjudicate matches with <code style="color: #4ade80;">Accept</code> or <code style="color: #f87171;">Reject</code> decisions to train ground truth.
+              </p>
+            </div>
+            <div style="border-left: 2px solid var(--accent-primary); padding-left: 0.65rem;">
+              <strong style="color: var(--text-primary);">📜 Custody Ledger:</strong>
+              <p style="color: var(--text-muted); margin-top: 0.2rem; font-size: 0.82rem;">
+                Immutable, append-only provenance record. Captures every pipeline run, evidence ingestion, parser execution, and status change with investigator UUID and UTC timestamps.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 2: Action Button Guide & Legend -->
+        <div style="background-color: var(--bg-input); border: 1px solid var(--bg-border); border-radius: 8px; padding: 1.25rem;">
+          <h4 style="color: var(--accent-primary); font-size: 0.95rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.4rem;">
+            <span>⚡</span> Granular Action Button Reference & Legend
+          </h4>
+          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <div>
+              <span class="btn btn-secondary btn-sm" style="pointer-events: none; padding: 0.15rem 0.5rem; font-size: 0.75rem;">⚡ Parse</span>
+              <span style="color: var(--text-muted); margin-left: 0.5rem; font-size: 0.84rem;">
+                Runs the format-specific factory parser (<code style="color: var(--accent-primary);">TextParser</code>, <code style="color: var(--accent-primary);">CSVParser</code>, <code style="color: var(--accent-primary);">PDFParser</code>) to extract text content and technical metadata into JSONB.
+              </span>
+            </div>
+            <div>
+              <span class="btn btn-primary btn-sm" style="pointer-events: none; padding: 0.15rem 0.5rem; font-size: 0.75rem;">🏷️ Extract</span>
+              <span style="color: var(--text-muted); margin-left: 0.5rem; font-size: 0.84rem;">
+                Runs high-precision deterministic regular expressions and NLP Named Entity Recognition (NER) to detect identities and record exact character start/end offsets.
+              </span>
+            </div>
+            <div>
+              <span class="btn btn-secondary btn-sm" style="pointer-events: none; padding: 0.15rem 0.5rem; font-size: 0.75rem;">🛡️ Verify</span>
+              <span style="color: var(--text-muted); margin-left: 0.5rem; font-size: 0.84rem;">
+                Recomputes the cryptographic SHA-256 digest directly from the disk file and compares it to the original intake baseline hash to detect tampering or corruption.
+              </span>
+            </div>
+            <div>
+              <span class="btn btn-secondary btn-sm" style="pointer-events: none; padding: 0.15rem 0.5rem; font-size: 0.75rem;">👁️ Inspect</span>
+              <span style="color: var(--text-muted); margin-left: 0.5rem; font-size: 0.84rem;">
+                Opens the parsed content and evidence inspection viewer with highlighted entity offsets and metadata overview.
+              </span>
+            </div>
+            <div>
+              <span class="btn btn-primary btn-sm" style="pointer-events: none; padding: 0.15rem 0.5rem; font-size: 0.75rem;">⚡ Run Correlation</span>
+              <span style="color: var(--text-muted); margin-left: 0.5rem; font-size: 0.84rem;">
+                Analyzes entity co-occurrences across multiple evidence files within the active case, scoring candidate matches and populating cross-file links.
+              </span>
+            </div>
+            <div>
+              <span class="badge badge-verified" style="pointer-events: none; font-size: 0.75rem;">Accept</span> / 
+              <span class="badge badge-tampered" style="pointer-events: none; font-size: 0.75rem;">Reject</span>
+              <span style="color: var(--text-muted); margin-left: 0.5rem; font-size: 0.84rem;">
+                Human-in-the-loop review actions. Adjudicating candidate matches promotes them to verified relationships or dismisses false-positive inferences.
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 3: Two-Role RBAC Summary -->
+        <div style="background-color: var(--bg-input); border: 1px solid var(--bg-border); border-radius: 8px; padding: 1.25rem;">
+          <h4 style="color: var(--accent-primary); font-size: 0.95rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.4rem;">
+            <span>🛡️</span> Strict Two-Role Authority Model
+          </h4>
+          <p style="color: var(--text-muted); margin: 0; font-size: 0.84rem;">
+            <strong style="color: #ffffff;">ADMIN:</strong> Full system access, case creation, status updates, case closure/archival, and audit log inspection.<br>
+            <strong style="color: #fda4af;">INVESTIGATOR:</strong> Active case analysis, evidence file intake, parser execution, indicator extraction, and candidate match adjudication.
+          </p>
+        </div>
+
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: flex-end; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--bg-border);">
+        <button type="button" class="btn btn-secondary" data-action="close-modal">Close Manual</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACCOUNT & AUTHORITY PROFILE DRAWER -->
+  <div id="profile-drawer-backdrop" class="profile-drawer-backdrop" data-action="close-profile"></div>
+  <aside id="profile-drawer" class="profile-drawer" aria-label="Account and Authority Settings" aria-hidden="true">
+    <div class="profile-drawer-header">
+      <h3><span id="drawer-header-avatar">👤</span> Account & Authority</h3>
+      <button class="close-btn" data-action="close-profile" aria-label="Close Profile Drawer">&times;</button>
+    </div>
+
+    <!-- Profile Navigation Tabs -->
+    <div class="profile-drawer-tabs" role="tablist">
+      <button class="profile-tab-btn active" data-action="switch-profile-tab" data-tab="account" role="tab" aria-selected="true">Account & Authority</button>
+      <button class="profile-tab-btn" data-action="switch-profile-tab" data-tab="preferences" role="tab" aria-selected="false">Quick Preferences</button>
+      <button class="profile-tab-btn" data-action="switch-profile-tab" data-tab="security" role="tab" aria-selected="false">Session & Security</button>
+    </div>
+
+    <div class="profile-drawer-body">
+      <!-- Tab 1: Account Overview & Dedicated What Your Authority Can Do -->
+      <div id="profile-tab-account" class="profile-tab-content active" role="tabpanel">
+        
+        <!-- Section 1: Account Details -->
+        <div style="text-align: center; margin-bottom: 1.25rem; padding: 1.25rem; background-color: var(--bg-input); border: 1px solid var(--bg-border); border-radius: 8px;">
+          <div style="font-size: 2.2rem; margin-bottom: 0.35rem;" id="drawer-avatar-display">🛡️</div>
+          <h4 id="drawer-user-fullname" style="font-size: 1.1rem; color: var(--text-primary); font-weight: 700;">-</h4>
+          <p id="drawer-user-username" style="font-size: 0.85rem; color: var(--accent-primary); font-family: var(--font-mono); margin-top: 0.2rem;">@-</p>
+        </div>
+
+        <div class="profile-setting-item" style="margin-bottom: 1.25rem;">
+          <div class="profile-info-row">
+            <span class="profile-info-lbl">Full Name</span>
+            <span class="profile-info-val" id="drawer-user-fullname-val">-</span>
+          </div>
+          <div class="profile-info-row">
+            <span class="profile-info-lbl">Username</span>
+            <span class="profile-info-val" id="drawer-user-username-val" style="font-family: var(--font-mono);">-</span>
+          </div>
+          <div class="profile-info-row">
+            <span class="profile-info-lbl">Email Address</span>
+            <span class="profile-info-val" id="drawer-user-email">-</span>
+          </div>
+          <div class="profile-info-row">
+            <span class="profile-info-lbl">Authority Role</span>
+            <span class="profile-info-val"><span id="drawer-user-role" class="user-role-badge">INVESTIGATOR</span></span>
+          </div>
+          <div class="profile-info-row">
+            <span class="profile-info-lbl">Account Status</span>
+            <span class="profile-info-val"><span id="drawer-user-status" class="status-pill status-active">● Active</span></span>
+          </div>
+          <div class="profile-info-row">
+            <span class="profile-info-lbl">User UUID</span>
+            <span class="profile-info-val" id="drawer-user-id" style="font-family: var(--font-mono); font-size: 0.75rem;">-</span>
+          </div>
+          <div class="profile-info-row">
+            <span class="profile-info-lbl">Session Expiry</span>
+            <span class="profile-info-val" id="drawer-session-expiry" style="color: var(--warning-color);">Active</span>
+          </div>
+        </div>
+
+        <!-- Section 2: Dedicated "Your Role & Permissions" (What Your Authority Can Do) Panel -->
+        <div class="role-perms-card" id="drawer-role-permissions-panel">
+          <div class="role-perms-header">
+            <div class="role-perms-title">
+              <span id="drawer-role-icon">🛡️</span>
+              <span id="drawer-role-title">Forensic Investigator (Case & Evidence Operations)</span>
+            </div>
+          </div>
+          <p class="role-perms-subtitle">Your system authority defines which forensic operations and governance capabilities you can execute.</p>
+          
+          <!-- What You Can Do (Allowed) -->
+          <div class="perm-section">
+            <div class="perm-section-title allowed">
+              <span>✔</span> What You Can Do (Allowed)
+            </div>
+            <ul class="perm-list" id="drawer-role-allowed">
+              <li class="perm-item allowed"><span class="perm-icon">✔</span> <span>Create and open investigation cases.</span></li>
+              <li class="perm-item allowed"><span class="perm-icon">✔</span> <span>Upload evidence files (.txt, .csv, .pdf) with automatic SHA-256 sealing.</span></li>
+              <li class="perm-item allowed"><span class="perm-icon">✔</span> <span>Run parsers, extract entities, and verify file hash integrity.</span></li>
+              <li class="perm-item allowed"><span class="perm-icon">✔</span> <span>Run cross-evidence correlation and Accept/Reject candidate matches.</span></li>
+            </ul>
+          </div>
+
+          <!-- Restricted -->
+          <div class="perm-section" style="margin-top: 0.85rem;">
+            <div class="perm-section-title restricted">
+              <span id="drawer-restricted-icon">🔒</span> <span id="drawer-restricted-title">Restricted (Admin Only)</span>
+            </div>
+            <ul class="perm-list" id="drawer-role-restricted">
+              <li class="perm-item restricted"><span class="perm-icon">🔒</span> <span>Cannot manage other user accounts or change user roles.</span></li>
+              <li class="perm-item restricted"><span class="perm-icon">🔒</span> <span>Cannot delete cases or access system-wide admin audit logs.</span></li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Tab 2: Quick Preferences -->
+      <div id="profile-tab-preferences" class="profile-tab-content" role="tabpanel">
+        
+        <!-- Table Row Density -->
+        <div class="profile-setting-item">
+          <div class="profile-setting-header">
+            <span class="profile-setting-title">Table Row Density</span>
+          </div>
+          <p class="profile-setting-desc" style="margin-bottom: 0.75rem;">Adjust table spacing between comfortable reading and high-density forensic analysis.</p>
+          <div class="density-segmented-control">
+            <button type="button" class="density-btn active" id="btn-density-comfortable" data-action="set-density" data-density="comfortable">Comfortable</button>
+            <button type="button" class="density-btn" id="btn-density-compact" data-action="set-density" data-density="compact">Compact</button>
+          </div>
+          <!-- Synced checkbox for table density state -->
+          <input type="checkbox" id="pref-dense-tables" style="display: none;" data-action="toggle-dense-tables">
+        </div>
+
+        <!-- Notification Alerts Toggle -->
+        <div class="profile-setting-item">
+          <div class="profile-setting-header">
+            <span class="profile-setting-title">Operation Status Alerts</span>
+            <label class="switch" aria-label="Toggle Operational Alerts">
+              <input type="checkbox" id="pref-notifications" data-action="toggle-notifications" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+          <p class="profile-setting-desc">Desktop and toast notifications for completed evidence parsing, entity extraction, and correlation runs.</p>
+        </div>
+
+        <!-- Default Case Landing View -->
+        <div class="profile-setting-item">
+          <div class="profile-setting-header">
+            <label for="pref-default-tab" class="profile-setting-title">Default Landing Workspace</label>
+          </div>
+          <p class="profile-setting-desc" style="margin-bottom: 0.5rem;">Select which workspace tab opens automatically when switching active cases.</p>
+          <select id="pref-default-tab" class="case-select" style="width: 100%; max-width: none;" data-action="change-default-tab">
+            <option value="overview">📊 Overview / Dashboard</option>
+            <option value="cases">📁 Case Management</option>
+            <option value="evidence">📦 Evidence Ledger</option>
+            <option value="entities">🏷️ Extracted Entities</option>
+            <option value="correlation">🕸️ Correlation Engine</option>
+            <option value="timeline">⏱️ Timeline Reconstruction</option>
+            <option value="graph">📈 Relationship Graph</option>
+            <option value="audit">📜 Chain of Custody</option>
+          </select>
+        </div>
+
+      </div>
+
+      <!-- Tab 3: Security & Session Management -->
+      <div id="profile-tab-security" class="profile-tab-content" role="tabpanel">
+        <div class="profile-setting-item">
+          <div class="profile-setting-header">
+            <span class="profile-setting-title">Active Session Token (JWT)</span>
+            <button class="btn btn-secondary btn-sm" id="btn-copy-token" data-action="copy-token" aria-label="Copy Session Token to Clipboard">Copy Token</button>
+          </div>
+          <p class="profile-setting-desc" style="margin-bottom: 0.5rem;">Stateless cryptographically signed bearer token for external API debugging.</p>
+          <div style="background-color: var(--bg-base); border: 1px solid var(--bg-border); border-radius: 4px; padding: 0.5rem; overflow-x: auto;">
+            <code id="drawer-truncated-token" style="font-size: 0.72rem; color: #fda4af; word-break: break-all;">eyJ...</code>
+          </div>
+        </div>
+
+        <div class="profile-setting-item" style="border-color: rgba(225, 29, 72, 0.35);">
+          <div class="profile-setting-header">
+            <span class="profile-setting-title" style="color: #fda4af;">Purge Local Session & Cache</span>
+          </div>
+          <p class="profile-setting-desc" style="margin-bottom: 0.75rem;">Immediately cleans all cached tokens, active case selections, and local workspace state.</p>
+          <button class="btn btn-danger btn-sm" style="width: 100%;" data-action="purge-session" aria-label="Purge Local Session">Purge Session & Cache</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Drawer Footer: Prominent Crimson Sign Out -->
+    <div class="profile-drawer-footer">
+      <button class="btn btn-danger btn-signout" style="width: 100%; padding: 0.85rem; font-size: 0.95rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 0.6rem;" data-action="logout" aria-label="Sign Out of Forensic Workstation">
+        <span>🚪</span> Sign Out of Workstation
+      </button>
+    </div>
+  </aside>
 
   <script src="/static/js/main.js"></script>
 </body>

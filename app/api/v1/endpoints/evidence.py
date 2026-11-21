@@ -7,14 +7,18 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.models.case import Case
 from app.models.evidence import Evidence, EvidenceMetadata
+from app.models.entity import EntityMention
+from app.models.timeline import TimelineEvent
 from app.models.user import User
 from app.models.audit import AuditLog
-from app.schemas.evidence import EvidenceRead, EvidenceIntegrityResponse
+from app.schemas.evidence import EvidenceRead, EvidenceIntegrityResponse, EvidenceContentResponse
 from app.schemas.parser import ParseEvidenceResponse, MetadataEntryResponse
+from app.schemas.entity import EntityMentionResponse
 from app.services.hasher import compute_sha256_stream, compute_sha256_filepath
 from app.services.storage import save_evidence_file
 from app.services.parsers.factory import ParserFactory
-from app.api.deps import get_current_user
+from app.services.timeline_extractor import extract_timeline_events
+from app.api.deps import get_current_user, require_role, require_any_role
 
 router = APIRouter()
 
@@ -34,6 +38,7 @@ def upload_evidence(
     3. Saves raw immutable file into secure vault storage (`storage/evidence_vault/{case_id}/`).
     4. Records provenance metadata into PostgreSQL `evidence` table.
     5. Inserts audit log entry (`EVIDENCE_UPLOADED`).
+    6. Registers baseline intake milestone in `timeline_events`.
     """
     case = db.query(Case).filter(Case.id == case_id).first()
     if not case:
@@ -68,6 +73,7 @@ def upload_evidence(
     db.commit()
     db.refresh(evidence_item)
 
+    # Immutable Audit Log
     audit_entry = AuditLog(
         case_id=case_id,
         user_id=current_user.id,
@@ -75,6 +81,17 @@ def upload_evidence(
         details=f"Uploaded evidence '{file.filename}' ({file_size} bytes, SHA256: {sha256_digest[:16]}...)"
     )
     db.add(audit_entry)
+
+    # Baseline Timeline Ingestion Event
+    intake_event = TimelineEvent(
+        case_id=case_id,
+        evidence_id=evidence_item.id,
+        event_timestamp=evidence_item.imported_at,
+        title=f"Evidence Vault Intake: {file.filename}",
+        description=f"Ingested {type_upper} file ({file_size} bytes). SHA-256: {sha256_digest[:16]}...",
+        event_type="INGESTION"
+    )
+    db.add(intake_event)
     db.commit()
 
     return evidence_item
@@ -154,8 +171,9 @@ def parse_evidence(
     2. Selects appropriate parser via ParserFactory (Text, CSV, PDF).
     3. Extracts text and technical metadata.
     4. Saves extracted key-value entries to `evidence_metadata` table.
-    5. Updates evidence processing_status to 'PARSED'.
-    6. Logs audit trail entry ('EVIDENCE_PARSED').
+    5. Reconstructs document timestamps into `timeline_events`.
+    6. Updates evidence processing_status to 'PARSED'.
+    7. Logs audit trail entry ('EVIDENCE_PARSED').
     """
     evidence = db.query(Evidence).filter(Evidence.id == evidence_id).first()
     if not evidence:
@@ -193,6 +211,19 @@ def parse_evidence(
         )
         db.add(meta_entry)
 
+    # Chronological Timeline Event Extraction from parsed document text
+    extracted_events = extract_timeline_events(parsed_text, max_events=25)
+    for evt in extracted_events:
+        t_event = TimelineEvent(
+            case_id=evidence.case_id,
+            evidence_id=evidence_id,
+            event_timestamp=evt["event_timestamp"],
+            title=evt["title"],
+            description=evt["description"],
+            event_type=evt["event_type"]
+        )
+        db.add(t_event)
+
     evidence.processing_status = "PARSED"
     db.add(evidence)
     db.commit()
@@ -202,7 +233,7 @@ def parse_evidence(
         case_id=evidence.case_id,
         user_id=current_user.id,
         action="EVIDENCE_PARSED",
-        details=f"Parsed evidence '{evidence.original_filename}' using {metadata_dict.get('parser', 'Parser')}"
+        details=f"Parsed evidence '{evidence.original_filename}' using {metadata_dict.get('parser', 'Parser')} ({len(extracted_events)} timestamp events extracted)"
     )
     db.add(audit_entry)
     db.commit()
@@ -236,3 +267,93 @@ def get_evidence_metadata(
 
     metadata_list = db.query(EvidenceMetadata).filter(EvidenceMetadata.evidence_id == evidence_id).all()
     return metadata_list
+
+@router.get("/evidence/{evidence_id}/content", response_model=EvidenceContentResponse)
+def get_evidence_content(
+    evidence_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Returns full raw parsed content, metadata, and extracted entity indicators with character offsets
+    for the 'View Real Data' forensic inspection modal.
+    """
+    evidence = db.query(Evidence).filter(Evidence.id == evidence_id).first()
+    if not evidence:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Evidence with ID '{evidence_id}' not found."
+        )
+
+    # 1. Parse or read content
+    parsed_text = ""
+    if os.path.exists(evidence.storage_path):
+        try:
+            parser = ParserFactory.get_parser(evidence.original_filename, evidence.evidence_type)
+            parsed_text, _ = parser.parse(evidence.storage_path)
+        except Exception:
+            try:
+                with open(evidence.storage_path, "r", encoding="utf-8", errors="replace") as f:
+                    parsed_text = f.read(50000)
+            except Exception:
+                parsed_text = "[Binary or unreadable file content]"
+
+    # 2. Metadata dict
+    meta_records = db.query(EvidenceMetadata).filter(EvidenceMetadata.evidence_id == evidence_id).all()
+    metadata_dict = {m.key: m.value for m in meta_records}
+
+    # 3. Mentions
+    mentions = db.query(EntityMention).filter(EntityMention.evidence_id == evidence_id).order_by(EntityMention.start_offset.asc()).all()
+    mention_responses = [EntityMentionResponse.model_validate(m) for m in mentions]
+
+    return EvidenceContentResponse(
+        evidence_id=evidence.id,
+        case_id=evidence.case_id,
+        original_filename=evidence.original_filename,
+        evidence_type=evidence.evidence_type,
+        file_size_bytes=evidence.file_size_bytes,
+        sha256_hash=evidence.sha256_hash,
+        processing_status=evidence.processing_status,
+        source_description=evidence.source_description,
+        parsed_text=parsed_text,
+        metadata=metadata_dict,
+        mentions=mention_responses
+    )
+
+@router.delete("/evidence/{evidence_id}", status_code=status.HTTP_200_OK)
+def delete_evidence(
+    evidence_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(require_role("ADMIN"))
+):
+    """
+    Administrative endpoint: Permanently delete an evidence item and its vault storage.
+    Strictly restricted to ADMIN role. Investigators are forbidden from deleting evidence.
+    """
+    item = db.query(Evidence).filter(Evidence.id == evidence_id).first()
+    if not item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Evidence item not found.")
+
+    filename = item.original_filename
+    case_id = item.case_id
+
+    # Log audit entry
+    audit_entry = AuditLog(
+        case_id=case_id,
+        user_id=admin_user.id,
+        action="EVIDENCE_DELETED",
+        details=f"Admin '{admin_user.username}' permanently deleted evidence file '{filename}'"
+    )
+    db.add(audit_entry)
+
+    # Delete disk file if exists
+    if item.storage_path and os.path.exists(item.storage_path):
+        try:
+            os.remove(item.storage_path)
+        except OSError:
+            pass
+
+    db.delete(item)
+    db.commit()
+
+    return {"message": f"Evidence record '{filename}' permanently deleted by Administrator."}

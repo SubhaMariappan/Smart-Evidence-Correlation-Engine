@@ -1,3 +1,5 @@
+import uuid
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -6,7 +8,7 @@ from app.models.user import User
 from app.models.audit import AuditLog
 from app.schemas.user import UserCreate, UserResponse, UserLogin, Token
 from app.core.security import get_password_hash, verify_password, create_access_token
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, require_role, require_any_role
 
 router = APIRouter()
 
@@ -33,7 +35,7 @@ def register_user(user_in: UserCreate, db: Session = Depends(get_db)):
         email=user_in.email,
         hashed_password=get_password_hash(user_in.password),
         full_name=user_in.full_name,
-        role=user_in.role
+        role=user_in.role.value if hasattr(user_in.role, 'value') else str(user_in.role)
     )
     db.add(new_user)
     db.commit()
@@ -92,3 +94,68 @@ def read_current_user(current_user: User = Depends(get_current_user)):
     Protected endpoint: Returns information about the currently authenticated user.
     """
     return current_user
+
+@router.get("/users", response_model=List[UserResponse])
+def list_users(
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(require_role("ADMIN"))
+):
+    """
+    Administrative endpoint: List all registered investigator and admin user accounts.
+    Strictly forbidden for INVESTIGATOR role.
+    """
+    users = db.query(User).order_by(User.created_at.desc()).all()
+    return users
+
+@router.patch("/users/{user_id}/status", response_model=UserResponse)
+def update_user_status(
+    user_id: uuid.UUID,
+    is_active: bool,
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(require_role("ADMIN"))
+):
+    """
+    Administrative endpoint: Activate or deactivate a user account.
+    Strictly forbidden for INVESTIGATOR role.
+    """
+    target_user = db.query(User).filter(User.id == user_id).first()
+    if not target_user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User account not found.")
+    
+    target_user.is_active = is_active
+    db.add(target_user)
+    
+    # Audit logging
+    audit_entry = AuditLog(
+        user_id=admin_user.id,
+        action="USER_STATUS_UPDATED",
+        details=f"Admin '{admin_user.username}' changed user '{target_user.username}' status to active={is_active}"
+    )
+    db.add(audit_entry)
+    db.commit()
+    db.refresh(target_user)
+    return target_user
+
+@router.get("/audit-all")
+def get_system_audit_logs(
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    admin_user: User = Depends(require_role("ADMIN"))
+):
+    """
+    Administrative endpoint: Inspect system-wide immutable Chain of Custody audit logs.
+    Strictly forbidden for INVESTIGATOR role.
+    """
+    logs = db.query(AuditLog).order_by(AuditLog.timestamp.desc()).limit(limit).all()
+    return [
+        {
+            "id": str(log.id),
+            "case_id": str(log.case_id) if log.case_id else None,
+            "user_id": str(log.user_id) if log.user_id else None,
+            "actor": log.user.username if log.user else "System",
+            "action": log.action,
+            "details": log.details,
+            "timestamp": log.timestamp.isoformat()
+        }
+        for log in logs
+    ]

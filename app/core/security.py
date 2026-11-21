@@ -39,3 +39,17 @@ def create_access_token(subject: Union[str, Any], expires_delta: Optional[timede
     to_encode = {"exp": expire, "sub": str(subject)}
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
+
+def require_role(required_role: str):
+    """
+    Role-checking dependency factory ensuring authenticated user holds required_role.
+    """
+    from app.api.deps import require_role as _require_role
+    return _require_role(required_role)
+
+def require_any_role(allowed_roles: list[str]):
+    """
+    Role-checking dependency factory ensuring authenticated user holds one of allowed_roles.
+    """
+    from app.api.deps import require_any_role as _require_any_role
+    return _require_any_role(allowed_roles)

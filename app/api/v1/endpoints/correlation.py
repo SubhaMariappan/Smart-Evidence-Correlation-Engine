@@ -88,6 +88,7 @@ def get_case_relationships(
     return relationships
 
 @router.patch("/matches/{match_id}", response_model=EntityMatchResponse)
+@router.patch("/correlate/matches/{match_id}", response_model=EntityMatchResponse)
 def update_match_status(
     match_id: uuid.UUID,
     match_status: str,

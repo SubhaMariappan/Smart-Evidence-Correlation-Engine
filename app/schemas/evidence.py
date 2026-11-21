@@ -1,7 +1,8 @@
 import uuid
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Dict, Any, List
 from pydantic import BaseModel, ConfigDict, Field
+from app.schemas.entity import EntityMentionResponse
 
 class EvidenceBase(BaseModel):
     original_filename: str
@@ -27,3 +28,16 @@ class EvidenceIntegrityResponse(BaseModel):
     calculated_sha256_hash: str
     is_valid: bool
     verified_at: datetime
+
+class EvidenceContentResponse(BaseModel):
+    evidence_id: uuid.UUID
+    case_id: uuid.UUID
+    original_filename: str
+    evidence_type: str
+    file_size_bytes: int
+    sha256_hash: str
+    processing_status: str
+    source_description: Optional[str] = None
+    parsed_text: str
+    metadata: Dict[str, str] = {}
+    mentions: List[EntityMentionResponse] = []

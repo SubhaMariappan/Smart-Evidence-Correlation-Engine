@@ -347,6 +347,16 @@ function initEventDelegation() {
         if (tab) switchTab(tab);
         break;
       }
+      case 'open-active-case': {
+        e.preventDefault();
+        const targetTab = document.querySelector('[data-tab="cases"]') || document.querySelector('[data-tab="evidence"]');
+        if (targetTab) {
+          targetTab.click();
+        } else {
+          switchTab('cases');
+        }
+        break;
+      }
       case 'step-nav': {
         const step = target.getAttribute('data-step');
         if (step) {
@@ -736,13 +746,21 @@ function setActiveCase(caseId) {
 async function loadCaseOverview(caseId) {
   const titleEl = document.getElementById('overview-case-title');
   const descEl = document.getElementById('overview-case-desc');
+  const openBtn = document.getElementById('active-case-open-btn');
   const statusEl = document.getElementById('overview-case-status');
   const auditBody = document.querySelector('#overview-audit-table tbody');
 
   if (!caseId) {
     if (titleEl) titleEl.textContent = 'No Active Case Selected';
     if (descEl) descEl.textContent = 'Please create a new case container or select an existing case from the header dropdown.';
-    if (statusEl) statusEl.textContent = 'N/A';
+    if (openBtn) {
+      openBtn.textContent = 'N/A ↗';
+      openBtn.className = 'status-pill status-closed clickable-badge';
+      openBtn.setAttribute('data-action', 'open-active-case');
+      openBtn.title = 'Click to open Case Management & Evidence Workspace';
+    } else if (statusEl) {
+      statusEl.textContent = 'N/A';
+    }
     if (auditBody) auditBody.innerHTML = '<tr><td colspan="4" style="color: var(--text-muted); text-align: center;">No active case selected.</td></tr>';
     updateMetrics(0, 0, 0, 0);
     return;
@@ -768,7 +786,14 @@ async function loadCaseOverview(caseId) {
 
     if (titleEl) titleEl.textContent = summary.title ? `[${summary.case_number}] ${summary.title}` : `Case #${summary.case_number}`;
     if (descEl) descEl.textContent = summary.description || 'No description provided for this case scope.';
-    if (statusEl) {
+    if (openBtn) {
+      const rawStatus = (summary.status || 'OPEN').replace('_', ' ').toUpperCase();
+      openBtn.textContent = `${rawStatus} ↗`;
+      const statusSlug = (summary.status || 'open').toLowerCase().replace('_', '-');
+      openBtn.className = `status-pill status-${statusSlug} clickable-badge`;
+      openBtn.setAttribute('data-action', 'open-active-case');
+      openBtn.title = 'Click to open Case Management & Evidence Workspace';
+    } else if (statusEl) {
       statusEl.textContent = (summary.status || 'OPEN').replace('_', ' ');
       statusEl.className = `badge badge-${(summary.status || 'open').toLowerCase().replace('_', '-')}`;
     }

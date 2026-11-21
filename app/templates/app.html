@@ -149,8 +149,14 @@
 
           <div class="card">
             <div class="card-header">
-              <h3 class="card-title"><span>📋</span> Active Case Overview</h3>
-              <span id="overview-case-status" class="badge badge-open">OPEN</span>
+              <h3 class="card-title card-title-clickable" data-action="open-active-case" title="Click to open Case Management & Evidence Workspace"><span>📋</span> Active Case Overview</h3>
+              <button type="button"
+                      id="active-case-open-btn"
+                      class="status-pill status-open clickable-badge"
+                      data-action="open-active-case"
+                      title="Click to open Case Management & Evidence Workspace">
+                OPEN ↗
+              </button>
             </div>
             <p id="overview-case-title" style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem;">Select an Active Case</p>
             <p id="overview-case-desc" style="color: var(--text-muted); font-size: 0.9rem;">No case selected.</p>

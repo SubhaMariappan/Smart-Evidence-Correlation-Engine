@@ -660,12 +660,12 @@ html, body {
   margin-top: 0.05rem;
 }
 
-/* Account Status Pill */
+/* Account Status Pill & Clickable Status Badges */
 .status-pill {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.15rem 0.55rem;
+  padding: 0.2rem 0.65rem;
   border-radius: 9999px;
   font-size: 0.72rem;
   font-weight: 700;
@@ -673,10 +673,65 @@ html, body {
   text-transform: uppercase;
 }
 
-.status-pill.status-active {
+.status-pill.status-active,
+.status-pill.status-open {
   background-color: rgba(34, 197, 94, 0.15);
   color: #4ade80;
   border: 1px solid rgba(34, 197, 94, 0.35);
+}
+
+.status-pill.status-in-progress {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #fde047;
+  border: 1px solid #f59e0b;
+}
+
+.status-pill.status-closed {
+  background-color: rgba(148, 163, 184, 0.15);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+/* Clickable Status Badge & Interactive Pill */
+button.clickable-badge,
+.clickable-badge {
+  cursor: pointer;
+  outline: none;
+  border: 1px solid transparent;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-decoration: none;
+  user-select: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.clickable-badge:hover,
+.clickable-badge:focus-visible {
+  background-color: var(--accent-primary, #e11d48) !important;
+  color: #ffffff !important;
+  border-color: #fda4af !important;
+  box-shadow: 0 0 12px rgba(225, 29, 72, 0.5) !important;
+  transform: translateY(-1px);
+}
+
+.clickable-badge:active {
+  transform: translateY(0);
+}
+
+/* Clickable Card Title Affordance */
+.card-title-clickable {
+  cursor: pointer;
+  transition: color 0.2s ease;
+  user-select: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.card-title-clickable:hover {
+  color: var(--accent-primary, #e11d48);
 }
 
 /* Segmented Control for Density */

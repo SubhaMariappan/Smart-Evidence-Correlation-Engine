@@ -12,12 +12,13 @@ class NLPExtractor:
     PERSON_PATTERNS = [
         re.compile(r'\b(?:contact|call|email|reach|speak to|sent to|ask for|with|to)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b', re.IGNORECASE),
         re.compile(r'\b(?:Mr\.|Ms\.|Mrs\.|Dr\.|Prof\.)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b'),
-        re.compile(r'\b([A-Z][a-z]+\s+[A-Z][a-z]+)\b')
+        re.compile(r'\b([A-Z][a-z]+\s+[A-Z][a-z]+)\b'),
+        re.compile(r'\b([A-Z]\.?\s+[A-Z][a-z]+)\b'),
     ]
 
     LOCATION_PATTERNS = [
         re.compile(r'\b(?:in|at|from|to|near|located at)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?(?:\s+(?:City|Street|Road|Nagar|Building|Tower|Airport|Branch))?)\b', re.IGNORECASE),
-        re.compile(r'\b(London|New York|Mumbai|Delhi|Bangalore|Singapore|Dubai|Tokyo)\b', re.IGNORECASE)
+        re.compile(r'\b(London|New York|Mumbai|Delhi|Bangalore|Singapore|Dubai|Tokyo|Chennai|Coimbatore|Hyderabad|Kolkata)\b', re.IGNORECASE)
     ]
 
     def extract(self, text: str) -> List[Dict[str, Any]]:

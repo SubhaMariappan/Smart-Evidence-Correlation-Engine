@@ -1,0 +1,35 @@
+Delivered-To: meera.krishnan@apexlogistics.in
+Received: by mail.apexlogistics.in (Postfix, from userid 104)
+	id 4WzN7x1kCqz5f1b; Mon, 12 Oct 2026 09:14:22 +0530 (IST)
+Received: from relay02.nordic-pay-sec.org (relay02.nordic-pay-sec.org [185.220.101.42])
+	by mx01.apexlogistics.in (Apex Security Gateway) with ESMTP id 8F10B39AC4
+	for <meera.krishnan@apexlogistics.in>; Mon, 12 Oct 2026 09:14:18 +0530 (IST)
+X-Originating-IP: [185.220.101.42]
+X-Mailer: Nordic Treasury Dispatcher v4.2
+Date: Mon, 12 Oct 2026 09:14:10 +0530
+From: "Nordic Settlement Desk" <billing-verify@nordic-pay-sec.org>
+To: "Meera Krishnan" <meera.krishnan@apexlogistics.in>
+Subject: URGENT: Mandatory Vendor Escrow Account Re-routing Notification [REF: APEX-904812]
+Message-ID: <20261012091410.884920114@nordic-pay-sec.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+
+ATTENTION: MEERA KRISHNAN / APEX LOGISTICS ACCOUNTS PAYABLE
+
+Dear Meera Krishnan,
+
+In accordance with the European Maritime logistics vendor reconciliation audit, pending operational invoices for the Q3 shipping corridor have been transitioned to our primary settlement vault.
+
+Please update the remittance instruction for invoice batch APEX-904812 immediately:
+Beneficiary Escrow Account: ACCT-884920114
+Routing Code: NRDC-SWIFT-991
+Designated Clearing Agent: Nordic Treasury Operations
+
+For authorization confirmation and wire verification, contact the assigned settlement officer at callback phone: +91-98401-77219.
+Failure to route funds to ACCT-884920114 before 15:00 IST will result in demurrage holds across international transit routes.
+
+Sincerely,
+Remittance Verification Desk
+Nordic Payment Security Protocol
+Direct Email: billing-verify@nordic-pay-sec.org
+Security Origin: 185.220.101.42

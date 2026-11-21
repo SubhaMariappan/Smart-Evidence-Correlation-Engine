@@ -73,6 +73,13 @@ class CandidateMatcher:
             if (val1 in val2 or val2 in val1) and min(len(val1), len(val2)) >= 3:
                 return "MEDIUM", f"Partial name match between '{val1}' and '{val2}'"
 
+            # Initial and surname matching (e.g. 'V. Menon' <-> 'Vikramaditya Menon')
+            p1 = [p.replace('.', '') for p in val1.split() if p.replace('.', '')]
+            p2 = [p.replace('.', '') for p in val2.split() if p.replace('.', '')]
+            if len(p1) >= 2 and len(p2) >= 2:
+                if p1[-1].lower() == p2[-1].lower() and p1[0][0].lower() == p2[0][0].lower():
+                    return "MEDIUM", f"Name initial and surname match between '{val1}' and '{val2}'"
+
             ratio = SequenceMatcher(None, val1, val2).ratio()
             if ratio >= 0.8:
                 return "MEDIUM", f"Name fuzzy similarity ({int(ratio*100)}%) between '{val1}' and '{val2}'"

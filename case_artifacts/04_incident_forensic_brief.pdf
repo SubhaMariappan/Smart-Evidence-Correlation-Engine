@@ -1,0 +1,131 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R] /Count 2 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Title (Initial Cyber Incident & Access Audit Brief) /Author (Apex DFIR Unit) >>
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 6 0 R >>
+endobj
+6 0 obj
+<< /Length 1357 >>
+stream
+BT
+/F1 11 Tf
+15 TL
+50 740 Td
+(APEX LOGISTICS ENTERPRISE SECURITY INCIDENT RESPONSE TEAM) Tj
+T*
+(CONFIDENTIAL DIGITAL FORENSICS & ACCESS AUDIT REPORT) Tj
+T*
+(Document Ref: IR-2026-PHANTOM-004) Tj
+T*
+(Date: 2026-10-13 10:00:00) Tj
+T*
+() Tj
+T*
+(1. EXECUTIVE SUMMARY & INCIDENT OVERVIEW) Tj
+T*
+(An emergency forensic audit was initiated following an unauthorized wire release of INR 4,850,000 on 2026-10-12.) Tj
+T*
+(The transaction was executed via an anomalous internal session mimicking vendor payment override protocol.) Tj
+T*
+() Tj
+T*
+(2. SUSPECT IDENTIFICATION & VPN SESSION FORENSICS) Tj
+T*
+(Forensic perimeter audit identified unauthorized external VPN gateway access authenticated with internal credentials.) Tj
+T*
+(Account Holder: Vikramaditya Menon) Tj
+T*
+(Corporate Title: Senior Logistics System Specialist) Tj
+T*
+(Registered Mobile: +91-99442-11085) Tj
+T*
+(Session Origin IP: 185.220.101.42) Tj
+T*
+(Geo-Location: Coimbatore Regional Gateway Node) Tj
+T*
+() Tj
+T*
+(3. INVESTIGATION FINDINGS - PERIMETER BREACH) Tj
+T*
+(VPN Session commenced at 2026-10-12 14:10:00 from external IP 185.220.101.42.) Tj
+T*
+(The session bypassed multi-factor authentication via cached credential token and accessed the central finance portal.) Tj
+T*
+(Subject Vikramaditya Menon was logged active in Coimbatore while coordinating with outside parties in Chennai.) Tj
+T*
+ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 8 0 R >>
+endobj
+8 0 obj
+<< /Length 1202 >>
+stream
+BT
+/F1 11 Tf
+15 TL
+50 740 Td
+(4. TREASURY PORTAL AUDIT & FRAUDULENT RE-ROUTING LOGS) Tj
+T*
+(Target Subsystem: Apex Core Treasury Remittance Server \(10.0.8.20\)) Tj
+T*
+(Session Window: 2026-10-12 14:15:00 to 2026-10-12 14:45:00) Tj
+T*
+() Tj
+T*
+(5. CORRELATED EVIDENCE LINKAGES) Tj
+T*
+(1. Transaction TXN-904812 created at 2026-10-12 14:32:00 routed funds to beneficiary account ACCT-884920114.) Tj
+T*
+(2. Beneficiary identity entered as V. Menon, matching suspect Vikramaditya Menon.) Tj
+T*
+(3. Communications log confirms repeated telephone coordination with +91-98401-77219 between Coimbatore and Chennai.) Tj
+T*
+(4. Origin IP 185.220.101.42 directly matches the sender relay in phishing email headers sent to Meera Krishnan.) Tj
+T*
+() Tj
+T*
+(6. FORENSIC RECOMMENDATION & NEXT ACTIONS) Tj
+T*
+(- Immediately freeze recipient account ACCT-884920114.) Tj
+T*
+(- Revoke all administrative privileges for Vikramaditya Menon.) Tj
+T*
+(- Preserve cell tower CDR logs for phone +91-99442-11085 across Chennai and Coimbatore towers.) Tj
+T*
+(- Submit this brief to legal counsel and cyber law enforcement authorities.) Tj
+T*
+() Tj
+T*
+(Report compiled by: Incident Commander, Apex Digital Forensics Unit) Tj
+T*
+ET
+endstream
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000121 00000 n 
+0000000191 00000 n 
+0000000290 00000 n 
+0000000416 00000 n 
+0000001825 00000 n 
+0000001951 00000 n 
+trailer
+<< /Size 9 /Root 1 0 R /Info 4 0 R >>
+startxref
+3205
+%%EOF

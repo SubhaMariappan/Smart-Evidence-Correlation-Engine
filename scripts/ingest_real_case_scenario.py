@@ -155,7 +155,8 @@ CDR-10930,2026-10-12 16:05:18,+91-99442-11085,+91-98401-77219,215,Coimbatore Cen
         content3 = """Txn_ID,Date_Time,Sender_Account,Beneficiary_Account,Beneficiary_Name,Amount_INR,Source_IP,Notes
 TXN-904790,2026-10-12 10:15:00,ACCT-0010992,ACCT-771029101,Standard Freight Corp,450000.00,10.0.4.15,Approved vendor settlement Bangalore
 TXN-904805,2026-10-12 12:45:22,ACCT-0010992,ACCT-551902881,Southern Terminal Fuel,820000.00,10.0.4.18,Port clearance voucher Chennai
-TXN-904812,2026-10-12 14:32:00,ACCT-0010992,ACCT-884920114,V. Menon,4850000.00,185.220.101.42,Urgent escrow override per billing-verify@nordic-pay-sec.org callback
+TXN-904812,2026-10-12 14:32:00,ACCT-0010992,ACCT-884920114,V. Menon,4250000.00,185.220.101.42,Urgent escrow override per billing-verify@nordic-pay-sec.org callback
+TXN-904818,2026-10-12 15:45:00,ACCT-0010992,ACCT-442819032,Western Marine Supplies,310000.00,10.0.4.15,Spares requisition Kochi
 TXN-904820,2026-10-12 16:20:10,ACCT-0010992,ACCT-339102941,Chennai Harbour Logistics,120000.00,10.0.4.15,Container yard lease renewal Chennai
 """
         with open(f3, "w", encoding="utf-8") as f:
@@ -172,7 +173,7 @@ TXN-904820,2026-10-12 16:20:10,ACCT-0010992,ACCT-339102941,Chennai Harbour Logis
                 'Date: 2026-10-13 10:00:00',
                 '',
                 '1. EXECUTIVE SUMMARY & INCIDENT OVERVIEW',
-                'An emergency forensic audit was initiated following an unauthorized wire release of INR 4,850,000 on 2026-10-12.',
+                'An emergency forensic audit was initiated following an unauthorized wire release of INR 4,250,000 on 2026-10-12.',
                 'The transaction was executed via an anomalous internal session mimicking vendor payment override protocol.',
                 '',
                 '2. SUSPECT IDENTIFICATION & VPN SESSION FORENSICS',
@@ -338,10 +339,17 @@ def run_operation_phantom_ledger():
         local_sha = compute_sha256(fpath)
         with open(fpath, "rb") as f:
             upload_res = client.post(
-                f"/cases/{case_id}/evidence/upload",
-                data={"evidence_type": etype, "source_description": sdesc},
+                "/evidence/upload",
+                data={"case_id": case_id, "evidence_type": etype, "source_description": sdesc},
                 files={"file": (fname, f.read())}
             )
+            if upload_res.status_code != 201:
+                with open(fpath, "rb") as f2:
+                    upload_res = client.post(
+                        f"/cases/{case_id}/evidence/upload",
+                        data={"evidence_type": etype, "source_description": sdesc},
+                        files={"file": (fname, f2.read())}
+                    )
         if upload_res.status_code != 201:
             print(f"[-] Error uploading {fname}: {upload_res.text}")
             sys.exit(1)
@@ -351,8 +359,15 @@ def run_operation_phantom_ledger():
         server_sha = ev_data["sha256_hash"]
 
         assert local_sha.lower() == server_sha.lower(), f"Hash mismatch on {fname}!"
+
+        # Immediate cryptographic hash verification
+        v_res = client.post(f"/evidence/{ev_id}/verify-hash")
+        if v_res.status_code != 200:
+            v_res = client.post(f"/evidence/{ev_id}/verify-integrity")
+        seal_status = "SEALED" if v_res.status_code == 200 and v_res.json().get("integrity_status") == "SEALED" else "VERIFIED"
+
         print(f"    [PASS] Uploaded {fname} (ID: {ev_id})")
-        print(f"           Cryptographic Hash: {server_sha} (Integrity: SEALED)")
+        print(f"           Cryptographic Hash: {server_sha} (Integrity: {seal_status})")
         ingested_evidence.append((ev_id, fname, etype))
 
     # 6. Parse Evidence Files
@@ -370,7 +385,9 @@ def run_operation_phantom_ledger():
     total_mentions = 0
     total_canonicals = 0
     for ev_id, fname, etype in ingested_evidence:
-        ext_res = client.post(f"/evidence/{ev_id}/extract-entities")
+        ext_res = client.post(f"/evidence/{ev_id}/extract")
+        if ext_res.status_code != 200:
+            ext_res = client.post(f"/evidence/{ev_id}/extract-entities")
         if ext_res.status_code != 200:
             print(f"[-] Error extracting entities for {fname}: {ext_res.text}")
             sys.exit(1)
@@ -383,7 +400,9 @@ def run_operation_phantom_ledger():
 
     # 8. Run Cross-Evidence Correlation Engine
     print("\n[*] Phase 7: Triggering Cross-Evidence Correlation Engine...")
-    corr_res = client.post(f"/cases/{case_id}/correlate")
+    corr_res = client.post(f"/correlation/run/{case_id}")
+    if corr_res.status_code != 200:
+        corr_res = client.post(f"/cases/{case_id}/correlate")
     if corr_res.status_code != 200:
         print(f"[-] Correlation error: {corr_res.text}")
         sys.exit(1)

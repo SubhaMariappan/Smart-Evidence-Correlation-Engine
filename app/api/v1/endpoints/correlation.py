@@ -15,6 +15,7 @@ from app.api.deps import get_current_user
 router = APIRouter()
 
 @router.post("/cases/{case_id}/correlate", response_model=CorrelationSummaryResponse)
+@router.post("/correlation/run/{case_id}", response_model=CorrelationSummaryResponse)
 def correlate_case_evidence(
     case_id: uuid.UUID,
     db: Session = Depends(get_db),

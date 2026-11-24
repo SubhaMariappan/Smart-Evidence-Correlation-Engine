@@ -15,6 +15,7 @@ from app.api.deps import get_current_user
 router = APIRouter()
 
 @router.post("/evidence/{evidence_id}/extract-entities", response_model=ExtractionSummaryResponse)
+@router.post("/evidence/{evidence_id}/extract", response_model=ExtractionSummaryResponse)
 def extract_evidence_entities(
     evidence_id: uuid.UUID,
     db: Session = Depends(get_db),

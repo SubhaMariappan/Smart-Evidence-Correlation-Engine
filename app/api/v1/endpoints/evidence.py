@@ -23,8 +23,10 @@ from app.api.deps import get_current_user, require_role, require_any_role
 router = APIRouter()
 
 @router.post("/cases/{case_id}/evidence/upload", response_model=EvidenceRead, status_code=status.HTTP_201_CREATED)
+@router.post("/evidence/upload", response_model=EvidenceRead, status_code=status.HTTP_201_CREATED)
 def upload_evidence(
-    case_id: uuid.UUID,
+    case_id: Optional[uuid.UUID] = None,
+    case_id_form: Optional[uuid.UUID] = Form(None, alias="case_id"),
     file: UploadFile = File(...),
     evidence_type: str = Form(..., description="EMAIL, CHAT, PDF, FINANCIAL_LOG, BROWSER_LOG, CALL_LOG, OTHER"),
     source_description: Optional[str] = Form(None),
@@ -40,11 +42,18 @@ def upload_evidence(
     5. Inserts audit log entry (`EVIDENCE_UPLOADED`).
     6. Registers baseline intake milestone in `timeline_events`.
     """
-    case = db.query(Case).filter(Case.id == case_id).first()
+    target_case_id = case_id or case_id_form
+    if not target_case_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="case_id must be provided in the URL or form data."
+        )
+
+    case = db.query(Case).filter(Case.id == target_case_id).first()
     if not case:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Case with ID '{case_id}' not found."
+            detail=f"Case with ID '{target_case_id}' not found."
         )
 
     valid_types = {"EMAIL", "CHAT", "PDF", "FINANCIAL_LOG", "BROWSER_LOG", "CALL_LOG", "OTHER"}
@@ -56,10 +65,10 @@ def upload_evidence(
         )
 
     sha256_digest, file_size = compute_sha256_stream(file.file)
-    relative_storage_path = save_evidence_file(case_id, file.filename, file.file)
+    relative_storage_path = save_evidence_file(target_case_id, file.filename, file.file)
 
     evidence_item = Evidence(
-        case_id=case_id,
+        case_id=target_case_id,
         original_filename=file.filename,
         evidence_type=type_upper,
         sha256_hash=sha256_digest,
@@ -75,7 +84,7 @@ def upload_evidence(
 
     # Immutable Audit Log
     audit_entry = AuditLog(
-        case_id=case_id,
+        case_id=target_case_id,
         user_id=current_user.id,
         action="EVIDENCE_UPLOADED",
         details=f"Uploaded evidence '{file.filename}' ({file_size} bytes, SHA256: {sha256_digest[:16]}...)"
@@ -84,7 +93,7 @@ def upload_evidence(
 
     # Baseline Timeline Ingestion Event
     intake_event = TimelineEvent(
-        case_id=case_id,
+        case_id=target_case_id,
         evidence_id=evidence_item.id,
         event_timestamp=evidence_item.imported_at,
         title=f"Evidence Vault Intake: {file.filename}",
@@ -116,6 +125,7 @@ def list_case_evidence(
     return evidence_list
 
 @router.post("/evidence/{evidence_id}/verify-integrity", response_model=EvidenceIntegrityResponse)
+@router.post("/evidence/{evidence_id}/verify-hash", response_model=EvidenceIntegrityResponse)
 def verify_evidence_integrity(
     evidence_id: uuid.UUID,
     db: Session = Depends(get_db),
